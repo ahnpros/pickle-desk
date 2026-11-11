@@ -26,6 +26,8 @@ export default defineConfig({
         start_url: base,
         scope: base,
         display: 'standalone',
+        // 홈 화면에 추가하면 전체화면으로 열리게 한다(지원 기기 우선, 아니면 standalone).
+        display_override: ['fullscreen', 'standalone'],
         background_color: '#ffffff',
         theme_color: '#ffffff',
         icons: [
