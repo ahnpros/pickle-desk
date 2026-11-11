@@ -1,0 +1,728 @@
+import { StrictMode } from 'react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import App from './App'
+import { KEY } from './lib/settings'
+import { nav } from './lib/google'
+import { FAKE_EMAIL, FAKE_SHEET_ID, FAKE_TOKEN, fakeSheet, storeFakeSession } from './test/fakeSheet'
+
+function connected(extra: Record<string, unknown> = {}) {
+  localStorage.setItem(KEY, JSON.stringify({ locale: 'ko', ...extra }))
+  storeFakeSession()
+}
+
+/** 구글에서 돌아온 상태를 꾸민다: 시작할 때 저장한 state 와 #access_token 이 붙은 주소. */
+function returnFromGoogle(hash: (state: string) => string) {
+  sessionStorage.setItem('pickledesk.oauth.state', 'st')
+  history.replaceState(null, '', `/${hash('st')}`)
+}
+const tokenHash = (state: string) =>
+  `#access_token=${FAKE_TOKEN}&expires_in=3599&state=${state}&scope=${encodeURIComponent('https://www.googleapis.com/auth/drive.file openid email')}`
+
+/** ≡ 메뉴 → 설정 */
+async function openSettings() {
+  await userEvent.click(screen.getByTestId('open-menu'))
+  await userEvent.click(screen.getByTestId('open-settings'))
+}
+
+let went: string[] = []
+beforeEach(() => {
+  vi.stubGlobal('navigator', { ...navigator, languages: ['ko-KR'], clipboard: { writeText: vi.fn(async () => {}) } })
+  went = []
+  vi.spyOn(nav, 'go').mockImplementation((url) => void went.push(url))
+})
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+  vi.useRealTimers()
+  sessionStorage.clear()
+  history.replaceState(null, '', '/')
+})
+
+describe('sign-in and setup', () => {
+  it('shows the Google sign-in screen and starts the redirect', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    const { fetchMock } = fakeSheet()
+    render(<App />)
+    await userEvent.click(await screen.findByTestId('login-google'))
+    expect(went).toHaveLength(1)
+    const u = new URL(went[0])
+    expect(u.hostname).toBe('accounts.google.com')
+    expect(u.searchParams.get('state')).toBe(sessionStorage.getItem('pickledesk.oauth.state'))
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('walks a new user through onboarding: sheet → Google check → Pickle message → test → extras', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    const { state, db } = fakeSheet()
+    returnFromGoogle(tokenHash)
+    render(<App />)
+
+    // 1. 작업함 만들기
+    await userEvent.click(await screen.findByTestId('create-sheet'))
+    expect(state.created).toHaveLength(1)
+    expect(window.location.hash).toBe('')
+    expect(JSON.parse(localStorage.getItem('pickledesk.token.v1')!)).toMatchObject({ accessToken: FAKE_TOKEN, email: FAKE_EMAIL })
+
+    // 2. 피클 구글 연동: 모르면 할 말을 알려 준다
+    expect(await screen.findByText('피클에 구글 계정이 연결돼 있나요?')).toBeInTheDocument()
+    await userEvent.click(screen.getByTestId('google-no'))
+    await userEvent.click(screen.getByTestId('google-phrase'))
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('구글 연동해 줘')
+    await userEvent.click(screen.getByRole('button', { name: '연결했어요' }))
+
+    // 3. 문장 복사
+    const prompt = (await screen.findByTestId('pickle-prompt')) as HTMLTextAreaElement
+    expect(prompt.value).toContain('https://docs.google.com/spreadsheets/d/new-sheet/edit')
+    await userEvent.click(screen.getByTestId('copy-prompt'))
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('5분마다 Tasks 탭을 확인해서'))
+    await userEvent.click(screen.getByRole('button', { name: '보냈어요' }))
+
+    // 4. 테스트 작업 → 피클이 답하면 성공 화면
+    await userEvent.click(await screen.findByTestId('send-test'))
+    await waitFor(() => expect(db).toHaveLength(1))
+    expect(db[0]).toMatchObject({ Category: 'quick_action', Status: 'pending' })
+    expect(await screen.findByTestId('test-waiting')).toBeInTheDocument()
+    db[0].Status = 'done'
+    db[0].Reply = '연결됐어요!'
+    act(() => void document.dispatchEvent(new Event('visibilitychange')))
+    expect(await screen.findByText('피클과 연결됐어요! 🎉')).toBeInTheDocument()
+    expect(screen.getByText('연결됐어요!')).toBeInTheDocument()
+    await userEvent.click(screen.getByTestId('test-next'))
+
+    // 5. 마무리 → 메인
+    expect(await screen.findByText('거의 다 됐어요')).toBeInTheDocument()
+    await userEvent.click(screen.getByTestId('onb-start'))
+    expect(await screen.findByText('연결됐어요!')).toBeInTheDocument()
+    expect(screen.queryByTestId('onboarding')).not.toBeInTheDocument()
+    expect(localStorage.getItem('pickledesk.onboarding.v1')).toBeNull()
+  })
+
+  it('resumes onboarding after a reload and can be skipped with "later"', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    fakeSheet()
+    returnFromGoogle(tokenHash)
+    const { unmount } = render(<App />)
+    await userEvent.click(await screen.findByTestId('create-sheet'))
+    await userEvent.click(await screen.findByTestId('google-yes'))
+    await screen.findByTestId('pickle-prompt')
+    unmount()
+    render(<App />)
+    expect(await screen.findByTestId('pickle-prompt')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('나중에'))
+    expect(await screen.findByText('아직 작업이 없어요')).toBeInTheDocument()
+  })
+
+  it('signs in on the first try even when the startup effect runs twice (StrictMode)', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    fakeSheet()
+    returnFromGoogle(tokenHash)
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    )
+    expect(await screen.findByTestId('create-sheet')).toBeInTheDocument()
+    expect(screen.queryByTestId('login-google')).not.toBeInTheDocument()
+  })
+
+  it('asks whether to bring in past history and adds it to the Pickle message', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    fakeSheet()
+    returnFromGoogle(tokenHash)
+    render(<App />)
+    await userEvent.click(await screen.findByTestId('create-sheet'))
+    await userEvent.click(await screen.findByTestId('google-yes'))
+    expect(await screen.findByText('지난 기록도 가져올까요?')).toBeInTheDocument()
+    const prompt = screen.getByTestId('pickle-prompt') as HTMLTextAreaElement
+    expect(screen.getByRole('radio', { name: '안 가져오기' })).toHaveAttribute('aria-checked', 'true')
+    expect(prompt.value).not.toContain('처음 한 번만')
+    await userEvent.click(screen.getByRole('radio', { name: '최근 7일' }))
+    expect(prompt.value).toContain('8. 처음 한 번만: 최근 7일 동안')
+    await userEvent.click(screen.getByTestId('copy-prompt'))
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('최근 7일 동안'))
+  })
+
+  it('reuses the sheet it made before on a new device', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    const { state } = fakeSheet([{ Task: '예전 작업' }])
+    state.files = [FAKE_SHEET_ID]
+    storeFakeSession({ workbook: false })
+    render(<App />)
+    expect(await screen.findByText('예전 작업')).toBeInTheDocument()
+    expect(state.created).toHaveLength(0)
+  })
+
+  it('keeps the session after a reload', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    expect(await screen.findByText('A')).toBeInTheDocument()
+    expect(screen.queryByTestId('login-google')).not.toBeInTheDocument()
+  })
+
+  it('refreshes an expired token silently, then gives up and asks to sign in', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    fakeSheet()
+    storeFakeSession({ expired: true })
+    const { unmount } = render(<App />)
+    await waitFor(() => expect(went).toHaveLength(1))
+    const u = new URL(went[0])
+    expect(u.searchParams.get('prompt')).toBe('none')
+    expect(u.searchParams.get('login_hint')).toBe(FAKE_EMAIL)
+    unmount()
+    // 구글이 조용한 로그인을 거절하고 돌아왔다
+    returnFromGoogle((st) => `#error=interaction_required&state=${st}`)
+    render(<App />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('로그아웃됐어요')
+    expect(went).toHaveLength(1)
+  })
+
+  it('ignores a token whose state does not match', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    fakeSheet()
+    sessionStorage.setItem('pickledesk.oauth.state', 'mine')
+    history.replaceState(null, '', `/${tokenHash('forged')}`)
+    render(<App />)
+    expect(await screen.findByTestId('login-google')).toBeInTheDocument()
+    expect(localStorage.getItem('pickledesk.token.v1')).toBeNull()
+  })
+
+  it('explains a denied Google permission', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ locale: 'ko' }))
+    fakeSheet()
+    returnFromGoogle((st) => `#error=access_denied&state=${st}`)
+    render(<App />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('구글 권한을 허용하지 않았어요')
+  })
+})
+
+describe('timeline', () => {
+  it('renders status badges, reply bubbles, results and the empty waiting state', async () => {
+    connected()
+    fakeSheet([
+      { Task: 'A', Status: 'pending' },
+      { Task: 'B', Status: 'running' },
+      { Task: 'C', Status: 'done', Reply: '끝냈어요', Result: '결과 본문', Category: 'briefing' },
+      { Task: 'D', Status: 'failed', Reply: '실패했어요' },
+    ])
+    render(<App />)
+    await screen.findByText('A')
+    const badges = screen.getAllByTestId('status-badge').map((b) => b.dataset.status)
+    expect(badges).toEqual(['pending', 'running', 'done', 'failed'])
+    expect(screen.getByText('피클이 아직 확인하지 않았어요')).toBeInTheDocument()
+    expect(screen.getByText('피클이 작업하고 있어요')).toBeInTheDocument()
+    expect(screen.getByText('결과 본문')).toBeInTheDocument()
+    expect(within(screen.getAllByTestId('task-item')[2]).getByText('브리핑')).toBeInTheDocument()
+    expect(screen.getByTestId('conn-state')).toHaveAttribute('data-state', 'online')
+  })
+
+  it('filters by status', async () => {
+    connected()
+    fakeSheet([
+      { Task: 'A', Status: 'pending' },
+      { Task: 'C', Status: 'done' },
+    ])
+    render(<App />)
+    await screen.findByText('A')
+    const nav = screen.getByRole('navigation', { name: '상태 필터' })
+    await userEvent.click(within(nav).getByRole('button', { name: /완료/ }))
+    expect(screen.queryByText('A')).not.toBeInTheDocument()
+    expect(screen.getByText('C')).toBeInTheDocument()
+    await userEvent.click(within(nav).getByRole('button', { name: /실패/ }))
+    expect(screen.getByText('이 상태의 작업이 없어요')).toBeInTheDocument()
+  })
+
+  it('shows the empty state for a new table', async () => {
+    connected()
+    fakeSheet([])
+    render(<App />)
+    expect(await screen.findByText('아직 작업이 없어요')).toBeInTheDocument()
+  })
+
+  it('loads older pages on demand', async () => {
+    connected()
+    const recs = Array.from({ length: 35 }, (_, i) => ({
+      Task: `job ${i}`,
+      CreatedAt: `2026-10-27 ${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}:00+00:00`,
+    }))
+    fakeSheet(recs)
+    render(<App />)
+    await screen.findByText('job 34')
+    expect(screen.queryByText('job 0')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByText('이전 작업 더 보기'))
+    expect(await screen.findByText('job 0')).toBeInTheDocument()
+    expect(screen.getAllByTestId('task-item')).toHaveLength(35)
+    expect(screen.queryByText('이전 작업 더 보기')).not.toBeInTheDocument()
+  })
+
+  it('linkifies urls in replies safely', async () => {
+    connected()
+    fakeSheet([{ Task: 'x', Status: 'done', Reply: '여기 https://example.com 확인' }])
+    render(<App />)
+    const link = await screen.findByRole('link', { name: 'https://example.com' })
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(link).toHaveAttribute('target', '_blank')
+  })
+})
+
+describe('polling', () => {
+  it('picks up Pickle replies on the next poll', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    connected({ pollSeconds: 5 })
+    const { db } = fakeSheet([{ Task: '아침 브리핑', Status: 'pending' }])
+    render(<App />)
+    await screen.findByText('아침 브리핑')
+    db[0].Status = 'done'
+    db[0].Reply = '브리핑 준비했어요'
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_100)
+    })
+    expect(await screen.findByText('브리핑 준비했어요')).toBeInTheDocument()
+    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-status', 'done')
+  })
+
+  it('notifies about a Pickle reply while the app is hidden, but not while it is visible', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const showNotification = vi.fn(async () => {})
+    vi.stubGlobal('Notification', Object.assign(vi.fn(), { permission: 'granted', requestPermission: vi.fn() }))
+    vi.stubGlobal('navigator', { ...navigator, languages: ['ko-KR'], serviceWorker: { getRegistration: async () => ({ showNotification }) } })
+    connected({ pollSeconds: 5, notify: true })
+    const { db } = fakeSheet([{ Task: '아침 브리핑', Status: 'pending' }, { Task: '메일 요약', Status: 'pending' }])
+    render(<App />)
+    await screen.findByText('아침 브리핑')
+
+    // 보이는 동안의 답변은 알리지 않는다
+    db[1].Status = 'done'
+    db[1].Reply = '메일 3통'
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_100)
+    })
+    await screen.findByText('메일 3통')
+    expect(showNotification).not.toHaveBeenCalled()
+
+    // 가려져 있으면 30초마다 확인하고 알린다
+    const vis = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+    db[0].Status = 'done'
+    db[0].Reply = '브리핑 준비했어요'
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000)
+    })
+    await waitFor(() => expect(showNotification).toHaveBeenCalledTimes(1))
+    expect(showNotification).toHaveBeenCalledWith('피클', expect.objectContaining({ body: '아침 브리핑\n브리핑 준비했어요', tag: 'task-1' }))
+    vis.mockRestore()
+  })
+
+  it('bundles many updates at once (e.g. a history backfill) into one notification', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const showNotification = vi.fn(async () => {})
+    vi.stubGlobal('Notification', Object.assign(vi.fn(), { permission: 'granted', requestPermission: vi.fn() }))
+    vi.stubGlobal('navigator', { ...navigator, languages: ['ko-KR'], serviceWorker: { getRegistration: async () => ({ showNotification }) } })
+    connected({ pollSeconds: 5, notify: true })
+    const { db } = fakeSheet([{ Task: '지금 작업', Status: 'pending' }])
+    render(<App />)
+    await screen.findByText('지금 작업')
+    const vis = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+    for (const n of [1, 2, 3, 4, 5]) db.push({ Id: '', Task: `지난 일 ${n}`, Status: 'done', Category: 'task', Reply: `결과 ${n}`, Result: '', CreatedAt: `2026-10-2${n} 09:00:00`, UpdatedAt: '' })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000)
+    })
+    await waitFor(() => expect(showNotification).toHaveBeenCalledTimes(1))
+    expect(showNotification).toHaveBeenCalledWith('피클', expect.objectContaining({ body: '피클이 작업 5개를 업데이트했어요.', tag: 'summary' }))
+    vis.mockRestore()
+  })
+
+  it('asks for notification permission when turned on in settings', async () => {
+    const requestPermission = vi.fn(async () => 'granted')
+    vi.stubGlobal('Notification', Object.assign(vi.fn(), { permission: 'default', requestPermission }))
+    vi.stubGlobal('navigator', { ...navigator, languages: ['ko-KR'], serviceWorker: {} })
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await openSettings()
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('radio', { name: '켜기' }))
+    expect(requestPermission).toHaveBeenCalled()
+    await waitFor(() => expect(within(screen.getByRole('dialog')).getByRole('radio', { name: '켜기' })).toHaveAttribute('aria-checked', 'true'))
+    await userEvent.click(screen.getByTestId('save-settings'))
+    expect(JSON.parse(localStorage.getItem(KEY)!).notify).toBe(true)
+  })
+
+  it('explains when notifications are blocked', async () => {
+    vi.stubGlobal('Notification', Object.assign(vi.fn(), { permission: 'denied', requestPermission: vi.fn() }))
+    vi.stubGlobal('navigator', { ...navigator, languages: ['ko-KR'], serviceWorker: {} })
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await openSettings()
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('radio', { name: '켜기' }))
+    expect(await screen.findByText(/알림이 차단돼 있어요/)).toBeInTheDocument()
+    expect(within(screen.getByRole('dialog')).getByRole('radio', { name: '끄기' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('refreshes the token silently, and stops polling, when Google rejects it', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    connected()
+    const { fetchMock, state } = fakeSheet()
+    state.reject = true
+    render(<App />)
+    expect(await screen.findByText(/구글 로그인이 만료됐어요/)).toBeInTheDocument()
+    await waitFor(() => expect(went).toHaveLength(1))
+    expect(new URL(went[0]).searchParams.get('prompt')).toBe('none')
+    expect(screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' })).toBeDisabled()
+    const calls = fetchMock.mock.calls.length
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20_000)
+    })
+    expect(fetchMock.mock.calls.length).toBe(calls)
+  })
+
+  it('offers to set up again when the sheet was deleted', async () => {
+    connected()
+    const { state } = fakeSheet([{ Task: 'A' }])
+    state.missing = true
+    render(<App />)
+    expect(await screen.findByText(/작업함 시트가 지워졌거나/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '다시 설정' }))
+    expect(await screen.findByTestId('create-sheet')).toBeInTheDocument()
+  })
+
+  it('shows a retry banner while offline and recovers', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    connected({ pollSeconds: 5 })
+    const { state } = fakeSheet([{ Task: 'A' }])
+    state.offline = true
+    render(<App />)
+    expect(await screen.findByText(/자동으로 다시 시도/)).toBeInTheDocument()
+    state.offline = false
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_100)
+    })
+    expect(await screen.findByText('A')).toBeInTheDocument()
+    expect(screen.queryByText(/자동으로 다시 시도/)).not.toBeInTheDocument()
+  })
+})
+
+describe('composer', () => {
+  it('sends on Enter as a pending task and clears the input', async () => {
+    connected()
+    const { db } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    const box = screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' })
+    await userEvent.type(box, '회의록 정리해 줘{Enter}')
+    await waitFor(() => expect(db).toHaveLength(1))
+    expect(db[0]).toMatchObject({ Task: '회의록 정리해 줘', Status: 'pending', Category: 'task' })
+    expect(box).toHaveValue('')
+    expect(await screen.findByText('회의록 정리해 줘')).toBeInTheDocument()
+    expect(screen.getByText('시트에 적었어요')).toBeInTheDocument()
+  })
+
+  it('does not send on Shift+Enter or while composing Korean', async () => {
+    connected()
+    const { db } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    const box = screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' })
+    await userEvent.type(box, '첫 줄{Shift>}{Enter}{/Shift}둘째')
+    expect(box).toHaveValue('첫 줄\n둘째')
+    fireEvent.keyDown(box, { key: 'Enter', isComposing: true, keyCode: 229 })
+    await new Promise((r) => setTimeout(r, 20))
+    expect(db).toHaveLength(0)
+  })
+
+  it('ignores blank input', async () => {
+    connected()
+    const { db } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    await userEvent.type(screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' }), '   {Enter}')
+    expect(db).toHaveLength(0)
+    expect(screen.getByRole('button', { name: '보내기' })).toBeDisabled()
+  })
+
+  it('uses the chosen category', async () => {
+    connected()
+    const { db } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    await userEvent.click(screen.getByTestId('pick-category'))
+    await userEvent.click(screen.getByRole('radio', { name: '아이디어' }))
+    await userEvent.type(screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' }), '새 앱 아이디어{Enter}')
+    await waitFor(() => expect(db[0]?.Category).toBe('idea'))
+  })
+
+  it('creates preset quick actions in one click', async () => {
+    connected()
+    const { db } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    await userEvent.click(screen.getByTestId('preset-mail'))
+    await userEvent.click(screen.getByTestId('preset-briefing'))
+    await waitFor(() => expect(db).toHaveLength(2))
+    expect(db[0]).toMatchObject({ Task: '오늘 안 읽은 메일 요약해 줘', Category: 'quick_action', Status: 'pending' })
+    expect(db[1]).toMatchObject({ Category: 'briefing' })
+  })
+
+  it('uploads attached photos to Drive and adds their links to the task', async () => {
+    connected()
+    const { db, state, fetchMock } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    const png = (n: string) => new File(['png'], n, { type: 'image/png' })
+    await userEvent.upload(screen.getByTestId('attach-input'), [png('a.png'), png('b.png')])
+    expect(within(screen.getByTestId('attach-row')).getAllByRole('img')).toHaveLength(2)
+    await userEvent.click(screen.getByRole('button', { name: '2번째 이미지 빼기' }))
+    await userEvent.type(screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' }), '이 영수증 정리해 줘{Enter}')
+    await waitFor(() => expect(db).toHaveLength(1))
+    expect(state.uploads).toEqual(['img-1'])
+    expect(db[0].Task).toBe('이 영수증 정리해 줘\n\n첨부 이미지: https://drive.google.com/file/d/img-1/view')
+    // 첨부 폴더 안에 올린다.
+    const upload = fetchMock.mock.calls.find(([u]) => String(u).includes('/upload/'))!
+    expect(String(upload[0])).toContain('uploadType=multipart')
+    expect(screen.queryByTestId('attach-row')).not.toBeInTheDocument()
+    // 대화에는 링크 대신 사진이 보인다.
+    const item = (await screen.findAllByTestId('task-item'))[0]
+    expect(within(item).getByText('이 영수증 정리해 줘')).toBeInTheDocument()
+    expect(within(item).queryByText(/drive\.google\.com/)).not.toBeInTheDocument()
+    expect(await within(item).findByRole('img', { name: '첨부 이미지 1' })).toHaveAttribute('src', expect.stringMatching(/^blob:/))
+  })
+
+  it('sends photos alone with a default message', async () => {
+    connected()
+    const { db } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    expect(screen.getByRole('button', { name: '보내기' })).toBeDisabled()
+    await userEvent.upload(screen.getByTestId('attach-input'), new File(['png'], 'a.png', { type: 'image/png' }))
+    await userEvent.click(screen.getByRole('button', { name: '보내기' }))
+    await waitFor(() => expect(db).toHaveLength(1))
+    expect(db[0].Task).toMatch(/^이 이미지를 봐 줘\.\n\n첨부 이미지: /)
+  })
+
+  it('keeps the photos and shows an error when the upload fails', async () => {
+    connected()
+    const { db, state } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    await userEvent.upload(screen.getByTestId('attach-input'), new File(['png'], 'a.png', { type: 'image/png' }))
+    state.offline = true
+    await userEvent.type(screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' }), '봐 줘{Enter}')
+    expect(await screen.findByText(/사진을 올리지 못했어요/)).toBeInTheDocument()
+    expect(db).toHaveLength(0)
+    expect(screen.getByTestId('attach-row')).toBeInTheDocument()
+  })
+
+  it('keeps the text and shows an error when sending fails', async () => {
+    connected()
+    const { state } = fakeSheet([])
+    render(<App />)
+    await screen.findByText('아직 작업이 없어요')
+    state.offline = true
+    const box = screen.getByRole('textbox', { name: '피클에게 맡길 일을 적어 주세요' })
+    await userEvent.type(box, '중요한 일{Enter}')
+    expect(await screen.findByText(/보내지 못했어요/)).toBeInTheDocument()
+    expect(box).toHaveValue('중요한 일')
+  })
+})
+
+describe('settings', () => {
+  it('saves poll interval, language and theme', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await openSettings()
+    const dialog = screen.getByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('radio', { name: '10초' }))
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'English' }))
+    await userEvent.click(within(dialog).getByRole('radio', { name: '다크' }))
+    await userEvent.click(screen.getByTestId('save-settings'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const saved = JSON.parse(localStorage.getItem(KEY)!)
+    expect(saved).toEqual({ pollSeconds: 10, locale: 'en', theme: 'dark', notify: false })
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    expect(screen.getByRole('textbox', { name: 'Ask Pickle to do something' })).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe('en')
+  })
+
+  it('tests the connection from settings', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }, { Task: 'B' }])
+    render(<App />)
+    await screen.findByText('A')
+    await openSettings()
+    await userEvent.click(screen.getByRole('button', { name: '연결 확인' }))
+    expect(await screen.findByText('연결됨 · 작업 2개')).toBeInTheDocument()
+  })
+
+  it('closes on Escape without saving', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await openSettings()
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('radio', { name: '30초' }))
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem(KEY)!).pollSeconds).not.toBe(30)
+  })
+
+  it('opens the menu with settings, the Pickle message and the sheet (personal build: no update request link)', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await userEvent.click(screen.getByTestId('open-menu'))
+    const menu = screen.getByRole('dialog', { name: '메뉴' })
+    expect(within(menu).getByRole('link', { name: /시트 열기/ })).toHaveAttribute('href', `https://docs.google.com/spreadsheets/d/${FAKE_SHEET_ID}/edit`)
+    // 개인 사본: 원본 개발자 구글 폼으로 가는 "업데이트 요청" 항목은 제거했다.
+    expect(within(menu).queryByTestId('request-update')).not.toBeInTheDocument()
+    await userEvent.click(within(menu).getByRole('button', { name: /피클에게 보낼 문장/ }))
+    expect(await screen.findByTestId('pickle-prompt')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: '메뉴' })).not.toBeInTheDocument()
+  })
+
+  it('copies the app link to share with a friend', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await userEvent.click(screen.getByTestId('open-menu'))
+    await userEvent.click(screen.getByTestId('share-app'))
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://techinpark.github.io/pickle-desk/')
+    expect(await screen.findByText('링크를 복사했어요. 친구에게 붙여 넣어 보내세요!')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: '메뉴' })).not.toBeInTheDocument()
+  })
+
+  it('opens the Pickle message from settings', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await openSettings()
+    await userEvent.click(screen.getByTestId('open-pickle'))
+    expect((screen.getByTestId('pickle-prompt') as HTMLTextAreaElement).value).toContain(`/d/${FAKE_SHEET_ID}/edit`)
+  })
+
+  it('shows the signed-in account and signs out', async () => {
+    connected()
+    fakeSheet([{ Task: 'A' }])
+    render(<App />)
+    await screen.findByText('A')
+    await openSettings()
+    expect(screen.getByTestId('account')).toHaveTextContent(FAKE_EMAIL)
+    await userEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+    expect(await screen.findByTestId('login-google')).toBeInTheDocument()
+    expect(localStorage.getItem('pickledesk.token.v1')).toBeNull()
+    expect(localStorage.getItem('pickledesk.workbook.v1')).toBeNull()
+  })
+})
+
+// jsdom 은 레이아웃이 없어서, 작업 카드·답변 말풍선 수로 문서 높이를 흉내 낸다.
+describe('scrolling', () => {
+  const saved = {
+    scrollHeight: Object.getOwnPropertyDescriptor(document.documentElement, 'scrollHeight'),
+    scrollY: Object.getOwnPropertyDescriptor(window, 'scrollY'),
+    innerHeight: Object.getOwnPropertyDescriptor(window, 'innerHeight'),
+    scrollTo: window.scrollTo,
+  }
+  afterEach(() => {
+    for (const [obj, key] of [
+      [document.documentElement, 'scrollHeight'],
+      [window, 'scrollY'],
+      [window, 'innerHeight'],
+    ] as const) {
+      const d = saved[key]
+      if (d) Object.defineProperty(obj, key, d)
+      else delete (obj as unknown as Record<string, unknown>)[key]
+    }
+    window.scrollTo = saved.scrollTo
+  })
+
+  function fakeLayout() {
+    const pos = { y: 0 }
+    const height = () =>
+      document.querySelectorAll('[data-testid="task-item"]').length * 400 +
+      document.querySelectorAll('.bubble:not(.bubble-waiting)').length * 300
+    Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, get: height })
+    Object.defineProperty(window, 'scrollY', { configurable: true, get: () => pos.y })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 })
+    const clampTo = (y: number) => {
+      pos.y = Math.max(0, Math.min(y, height() - 800))
+      window.dispatchEvent(new Event('scroll'))
+    }
+    window.scrollTo = ((o: ScrollToOptions) => clampTo(o.top ?? 0)) as typeof window.scrollTo
+    const atLatest = () => waitFor(() => expect(pos.y).toBe(height() - 800))
+    return { pos, height, userScroll: clampTo, atLatest }
+  }
+
+  const poll = () =>
+    act(async () => {
+      await vi.advanceTimersByTimeAsync(5_100)
+    })
+
+  it('follows a long reply that arrives while the reader is at the bottom', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    connected({ pollSeconds: 5 })
+    const { db } = fakeSheet([{ Task: 'A' }, { Task: 'B' }, { Task: 'C' }])
+    const layout = fakeLayout()
+    render(<App />)
+    await screen.findByText('C')
+    await waitFor(() => expect(layout.pos.y).toBe(layout.height() - 800))
+    db[2].Status = 'done'
+    db[2].Reply = '아주 긴 답변'
+    await poll()
+    await screen.findByText('아주 긴 답변')
+    expect(layout.pos.y).toBe(layout.height() - 800)
+  })
+
+  it('stays put when the reader has scrolled up', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    connected({ pollSeconds: 5 })
+    const { db } = fakeSheet([{ Task: 'A' }, { Task: 'B' }, { Task: 'C' }])
+    const layout = fakeLayout()
+    render(<App />)
+    await screen.findByText('C')
+    await layout.atLatest()
+    act(() => layout.userScroll(0))
+    db[2].Reply = '답변'
+    await poll()
+    await screen.findByText('답변')
+    expect(layout.pos.y).toBe(0)
+  })
+
+  it('keeps the reading position when older tasks load above', async () => {
+    connected()
+    fakeSheet(Array.from({ length: 35 }, (_, i) => ({ Task: `job ${i}` })))
+    const layout = fakeLayout()
+    render(<App />)
+    await screen.findByText('job 34')
+    await layout.atLatest()
+    act(() => layout.userScroll(0))
+    await userEvent.click(screen.getByText('이전 작업 더 보기'))
+    await screen.findByText('job 0')
+    // 위에 5개(400px씩)가 붙었으니 같은 카드를 보려면 2000px 내려가 있어야 한다.
+    expect(layout.pos.y).toBe(2000)
+  })
+
+  it('jumps to the latest again after switching to a new sheet', async () => {
+    connected()
+    const { state } = fakeSheet(Array.from({ length: 6 }, (_, i) => ({ Task: `job ${i}` })))
+    const layout = fakeLayout()
+    render(<App />)
+    await screen.findByText('job 5')
+    await layout.atLatest()
+    act(() => layout.userScroll(0))
+    state.missing = true
+    act(() => void document.dispatchEvent(new Event('visibilitychange'))) // 다시 보이면 바로 새로고침
+    await userEvent.click(await screen.findByRole('button', { name: '다시 설정' }))
+    state.missing = false
+    await userEvent.click(await screen.findByTestId('create-sheet'))
+    await userEvent.click(await screen.findByText('나중에'))
+    await screen.findByText('job 5')
+    await waitFor(() => expect(layout.pos.y).toBe(layout.height() - 800))
+  })
+})
