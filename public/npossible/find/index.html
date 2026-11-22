@@ -278,6 +278,26 @@
   </div>
 
   <div class="card pad" style="margin-top:16px">
+    <h2>자료를 늘려서 같은 질의를 다시 재기</h2>
+    <p class="small muted">정답 문서 30건은 그대로 두고, 같은 주제의 다른 문서 270건을 더해 봅니다. 정답이 다른 문서에 묻히는지 보는 시험입니다.</p>
+    <div class="row" style="margin-top:0"><button class="btn pri" id="scaleRun">자료 270건 더하고 다시 재기</button></div>
+    <div id="scaleOut" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>쪽지와 검색 기록을 넣을 때의 권한과 삭제</h2>
+    <table>
+      <thead><tr><th style="width:28%">항목</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>검색 범위</td><td>이용자가 볼 수 있는 글만 찾습니다. 남의 비공개 글과 쪽지는 색인에 넣지 않습니다. 쪽지는 보낸 사람과 받은 사람 양쪽이 볼 수 있는 것만입니다.</td></tr>
+        <tr><td>원본이 지워지면</td><td>색인에서도 지웁니다. 원본 삭제를 확인한 시점에 색인 항목을 지우고, 검색 결과에 흔적을 남기지 않습니다.</td></tr>
+        <tr><td>공개 범위가 바뀌면</td><td>비공개로 바뀐 글은 다음 조회 때 색인에서 빠집니다. 이미 본 검색 기록에는 제목을 남기지 않습니다.</td></tr>
+        <tr><td>비용</td><td>색인 갱신은 원본이 바뀔 때만 합니다. 검색은 규칙 기반이라 질의당 모델 호출이 없습니다. 규모가 커지면 색인 크기와 응답 시간이 늘어나는 것이 남는 부담입니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
     <h2>바꾸지 않은 것</h2>
     <ul class="small">
       <li><b>랭킹 모델을 키우지 않았습니다.</b> 설명 가능성(왜 이 결과인지)을 먼저 지키는 것이 이 안의 주장이므로, 학습 기반 재정렬은 넣지 않았습니다.</li>
@@ -288,6 +308,6 @@
 </section>
 <footer class="meta">sun-pickle · Pickle · Npossible 새판 시즌0 · 공식 미션 news · 출품물 CC BY-SA 4.0 / 코드 GPL-3.0 · 예시 자료는 창작</footer>
 </div>
-<script src="script.js?v=9492ae93"></script>
+<script src="script.js?v=133b7582"></script>
 </body>
 </html>

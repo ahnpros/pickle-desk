@@ -370,6 +370,87 @@
     $(id).addEventListener("change", function(){ logLine("필터 — "+id+"="+$(id).value); run(false); });
   });
 
+
+  // ---------- v2: 규모 시험 (같은 질의, 자료만 늘림) ----------
+  function mulberry(seed){
+    return function(){
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var TOPIC = [
+    {k:"전세", t:["전세대출 금리","전세보증금 반환","전세 사기 예방","전세 계약 갱신"], b:"은행과 보증기관 조건이 달라 실제 부담이 달라진다. 서류와 등기부등본 확인이 먼저다.", tags:"전세 대출 보증금 계약"},
+    {k:"난방", t:["겨울 난방비","보일러 온도","전기히터 소비전력","단열 필름"], b:"같은 실내 온도라도 난방 방식과 사용 시간에 따라 요금 차이가 크다.", tags:"난방 전기요금 겨울 보일러"},
+    {k:"등산", t:["주말 등산 코스","겨울 등산 준비물","관악산 초보 코스","북한산 사람 많은 길"], b:"초보는 2시간 안팎 코스가 낫고 방한 장갑과 아이젠을 챙긴다.", tags:"등산 코스 주말 초보"},
+    {k:"반도체", t:["반도체 수출","메모리 가격","설비 투자 전망","소재 부품 업종"], b:"메모리 가격과 장비 발주가 함께 움직이며 수출액이 늘었다.", tags:"반도체 수출 메모리 투자"},
+    {k:"독감", t:["아이 독감 유행","독감 예방접종","학교 결석 기준","독감 등교"], b:"환자가 두 주 새 늘었고 예방접종과 손 씻기가 여전히 가장 효과적이다.", tags:"독감 아이 학교 건강"},
+    {k:"버스", t:["서울 버스 노선 개편","간선 지선 조정","출퇴근 배차","버스 정류장 변경"], b:"노선 18개가 조정되고 출퇴근 시간대 배차 간격도 바뀐다.", tags:"버스 노선 서울 개편"},
+    {k:"헬스장", t:["동네 헬스장 후기","헬스장 아침 시간","3개월권 가격","기구 사용법"], b:"아침 7시가 한산하고 3개월권이 한 달씩 끊는 것보다 쌌다.", tags:"헬스장 후기 운동 아침"},
+    {k:"세탁기", t:["노후 세탁기 전기요금","세탁기 소음","중고 세탁기 거래","대기전력"], b:"같은 사용량에도 효율 저하로 요금 차이가 났고 소음도 커졌다.", tags:"세탁기 전기요금 가전"},
+    {k:"자동차보험", t:["자동차보험 갱신","다이렉트 비교","마일리지 특약","무사고 할인"], b:"갱신 시점과 특약 조건에 따라 보험료 차이가 크다.", tags:"자동차보험 갱신 할인 비교"}
+  ];
+  var PLACE = ["서울","부산","대구","인천","대전","광주","수원","성남","고양","청주"];
+  var MONTH = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
+  function genDocs(n){
+    var rnd = mulberry(20261123);
+    var out = [];
+    for(var i=0;i<n;i++){
+      var tp = TOPIC[Math.floor(rnd()*TOPIC.length)];
+      var tt = tp.t[Math.floor(rnd()*tp.t.length)];
+      var pl = PLACE[Math.floor(rnd()*PLACE.length)];
+      var mo = MONTH[Math.floor(rnd()*MONTH.length)];
+      var num = 1 + Math.floor(rnd()*9);
+      var src = rnd() < 0.5 ? "뉴스" : "판";
+      out.push({
+        id: 1000+i,
+        date: "2026-" + String(1+Math.floor(rnd()*11)).padStart(2,"0") + "-" + String(1+Math.floor(rnd()*27)).padStart(2,"0"),
+        src: src,
+        who: src === "뉴스" ? "기사" : "사람",
+        title: pl + " " + tt + " 정리 " + num,
+        body: mo + " 기준으로 " + tp.b + " " + pl + " 기준 사례 " + num + "건을 더 봤다.",
+        tags: tp.tags + " " + pl
+      });
+    }
+    return out;
+  }
+
+  function runScale(){
+    var before = DOCS.length;
+    var added = genDocs(270);
+    Array.prototype.push.apply(DOCS, added);
+    var t0 = performance.now();
+    var rows = GOLD.map(function(g){
+      var k = keywordEngine(g.q), f = fragmentEngine(g.q);
+      return { gold:g.id,
+        khit: k[0]===g.id, k3: k.slice(0,3).indexOf(g.id)>=0,
+        fhit: f[0]===g.id, f3: f.slice(0,3).indexOf(g.id)>=0,
+        k0: k.length===0, f0: f.length===0 };
+    });
+    var elapsed = performance.now() - t0;
+    var n = rows.length;
+    var k1 = rows.filter(function(r){return r.khit;}).length;
+    var k3 = rows.filter(function(r){return r.k3;}).length;
+    var f1 = rows.filter(function(r){return r.fhit;}).length;
+    var f3 = rows.filter(function(r){return r.f3;}).length;
+    var f0 = rows.filter(function(r){return r.f0;}).length;
+    var k0 = rows.filter(function(r){return r.k0;}).length;
+    $("corpusCount").textContent = String(DOCS.length);
+    $("scaleOut").innerHTML =
+      '<div class="kpi">' +
+      '<div><b>자료 ' + DOCS.length + '건에서 조각 검색</b><span>hit@1 ' + f1 + '/' + n + ' · hit@3 ' + f3 + '/' + n + ' · 0건 ' + f0 + '</span></div>' +
+      '<div><b>같은 자료에서 키워드(느슨)</b><span>hit@1 ' + k1 + '/' + n + ' · hit@3 ' + k3 + '/' + n + ' · 0건 ' + k0 + '</span></div>' +
+      '<div><b>질의 10건 두 방식 합계 시간</b><span>' + Math.round(elapsed) + 'ms (' + Math.round(elapsed/ (n*2)) + 'ms/질의)</span></div>' +
+      '<div><b>늘어난 자료</b><span>' + (DOCS.length - before) + '건, 제가 만든 것</span></div>' +
+      '</div>' +
+      '<p class="tiny muted" style="margin-top:8px">정답 문서는 늘어난 자료에도 그대로 있고, 늘어난 자료는 같은 주제의 다른 문서입니다. 실제 서비스 색인이 아니라 정답을 흔들어 보는 시험입니다.</p>';
+  }
+  if($("scaleRun")){
+    $("scaleRun").addEventListener("click", runScale);
+  }
+
   var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"]];
   function selectTab(id){
     tabs.forEach(function(p){
