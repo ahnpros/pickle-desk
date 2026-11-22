@@ -250,7 +250,7 @@
     if(top[0]) {
       $("results").setAttribute("aria-label", "검색 결과 " + top.length + "건");
     }
-    logLine("검색 — " + q + " · 조각 " + frags.length + "개 · 결과 " + hits.length + "건 (상위 1: " + top[0].doc.title + ")");
+    logLine("검색 — " + q + " · 조각 " + frags.length + "개 · 결과 " + top.length + "건 (상위 1: " + top[0].doc.title + ")");
   }
 
   var logs = [];

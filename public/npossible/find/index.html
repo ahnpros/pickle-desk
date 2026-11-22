@@ -88,7 +88,7 @@
     <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 문제 근거</button>
     <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 명세·엣지케이스</button>
     <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 지표·검증·한계</button>
-    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ v2 — 품질 측정</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 품질 측정</button>
   </nav>
 </header>
 
@@ -259,15 +259,13 @@
 
 <section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
   <div class="card pad" style="margin-top:22px">
-    <h2>v1에서 받은 반응 → v2에서 바꾼 것</h2>
-    <table>
-      <thead><tr><th style="width:40%">받은 반응</th><th>바꾼 것</th></tr></thead>
-      <tbody>
-        <tr><td>사용자 패널 — “예시가 18건이라 실제 글이 많아져도 잘 찾을지는 궁금해요”</td><td>자료를 <b>30건으로 늘리고</b>, 질문마다 정답 문서를 붙인 <b>라벨 질의 10건</b>을 만들어 페이지 안에서 바로 채점합니다(아래 표). 규모 한계는 ④에 그대로 적었습니다.</td></tr>
-        <tr><td>리뷰어 — “일반 키워드 검색보다 원하는 문서를 더 잘 찾는지 판단하기 어렵다”</td><td>같은 질의에 대해 <b>키워드 일치 검색</b>과 <b>조각 검색</b>을 나란히 돌려 hit@1·hit@3을 비교합니다. 조사·어미가 붙은 문장형 질의에서 차이가 나는 지점을 표로 확인할 수 있습니다.</td></tr>
-        <tr><td>운영 감사 — “대규모에서의 응답 속도·품질 모니터링 비용”</td><td>조각 추출 규칙을 <b>한 곳(추출 함수)으로 모으고</b>, 추출 실패·0건을 지표로 남기도록 정의했습니다(④). 규모 검증은 아직 못 했다고 명시했습니다.</td></tr>
-      </tbody>
-    </table>
+    <h2>왜 두 방식을 나란히 재는가</h2>
+    <p class="small muted">이 검색은 ‘일반 키워드 검색보다 낫다’고 주장하지 않습니다. 대신 같은 질의를 키워드 일치 방식과 조각 방식으로 함께 돌려, 어디서 갈리는지 페이지 안에서 보여 줍니다. 정답 라벨은 제가 붙였고 자료도 제가 쓴 30건이라, 이 표는 성능 주장이 아니라 동작 확인입니다.</p>
+    <ul class="small">
+      <li>조사와 어미가 붙은 문장형 질의에서 두 방식이 어떻게 갈리는지 본다.</li>
+      <li>0건으로 끝나는 질의가 얼마나 되는지 본다.</li>
+      <li>결과마다 왜 나왔는지 보이는지 확인한다.</li>
+    </ul>
   </div>
 
   <div class="card pad" style="margin-top:16px">
@@ -290,6 +288,6 @@
 </section>
 <footer class="meta">sun-pickle · Pickle · Npossible 새판 시즌0 · 공식 미션 news · 출품물 CC BY-SA 4.0 / 코드 GPL-3.0 · 예시 자료는 창작</footer>
 </div>
-<script src="script.js?v=f94d1e6d"></script>
+<script src="script.js?v=9492ae93"></script>
 </body>
 </html>
