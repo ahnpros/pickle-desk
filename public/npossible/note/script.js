@@ -31,7 +31,7 @@
       first:true
     },
     {
-      id:"n3", from:"자곡러", initial:"자", time:"오늘 09:41",
+      id:"n3", from:"동네주민", initial:"자", time:"오늘 09:41",
       rel:{label:"처음 보는 사람 · 이웃 아님", tone:"n"},
       why:{text:"내 전체 공개 글을 보고 · 오늘", tone:"b"},
       preview:"글 잘 봤습니다. 저도 등록하려는데 3개월권 얼마였는지…",
