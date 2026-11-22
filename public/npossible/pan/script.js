@@ -29,13 +29,19 @@
   }
   function buttonLabel(scope){
     if(scope==="private") return "나만 보기로 저장";
+    if(scope==="public") return "전체 공개로 게시";
     return POLICY[scope].short + "에게 게시";
+  }
+  function barLabel(scope){
+    if(scope==="private") return "지금 나만 볼 수 있어요";
+    if(scope==="public") return "전체 공개 중";
+    return POLICY[scope].short + "에게 공개";
   }
 
   function render(){
     var p = POLICY[state.scope];
     $("scopeBar").classList.toggle("risk", state.scope==="public");
-    $("barWho").textContent = state.scope==="private" ? "지금 나만 볼 수 있어요" : p.short + "에게 공개";
+    $("barWho").textContent = barLabel(state.scope);
     $("barWhy").textContent = p.why + (state.touched ? "" : " · 기본값 그대로예요");
     var btn = $("btnPost");
     if(btn){
@@ -69,6 +75,7 @@
     var s = $("sheet");
     var willOpen = force ? true : !s.classList.contains("open");
     s.classList.toggle("open", willOpen);
+    s.inert = !willOpen;
     $("btnChange").setAttribute("aria-expanded", String(willOpen));
     if(willOpen){
       addLog("공개 범위 선택지 열기", "현재: " + POLICY[state.scope].label);
@@ -141,7 +148,7 @@
       '<div class="row"><button class="btn ghost" id="btnResume" style="flex:1">이어 쓰기</button></div>';
     var compose = document.querySelector(".compose");
     compose.style.display="none";
-    $("sheet").classList.remove("open");
+    $("sheet").classList.remove("open"); $("sheet").inert = true;
     if(!$("draftNote")) compose.after(t);
     $("btnResume").addEventListener("click", function(){
       t.remove(); compose.style.display="block"; addLog("이어 쓰기", "초안 복원");
@@ -179,7 +186,7 @@
     $("body").value="처음엔 기구 이름도 몰라서 한참 서성였어요. 지금은 아침 7시에 가면 사람이 적어서 좋더라고요. 혹시 자곡동 근처에 같이 다니실 분 있으면 댓글 주세요.";
     var r = document.querySelector(".result"); if(r) r.remove();
     document.querySelector(".compose").style.display="block";
-    $("sheet").classList.remove("open");
+    $("sheet").classList.remove("open"); $("sheet").inert = true;
     $("btnChange").setAttribute("aria-expanded","false");
     buildFoot();
     render(); renderLog();
@@ -204,5 +211,6 @@
     });
   });
 
+  $("sheet").inert = true;
   render(); renderLog();
 })();
