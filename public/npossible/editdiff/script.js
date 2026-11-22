@@ -275,7 +275,7 @@
     $("ruleBox").innerHTML =
       '<table><thead><tr><th>시각</th><th>판정</th><th>바뀐 것</th></tr></thead><tbody>' +
       rows + "</tbody></table>" +
-      '<p class="tiny muted" style="margin-top:8px">이 표는 위 예시 글의 수정 ' + EDITS.length + "건을 실제로 비교해 만든 결과입니다. 판정은 아래 규칙으로 계산합니다.</p>' +
+      '<p class="tiny muted" style="margin-top:8px">이 표는 위 예시 글의 수정 ' + EDITS.length + "건을 실제로 비교해 만든 결과입니다. 판정은 아래 규칙으로 계산합니다.</p>" +
       '<pre style="font-size:11.5px">사라진 토막에 전화번호·계좌·주소 모양 → 개인정보 삭제(내용 비저장)\n숫자·부정어·노선·시점·반대말 변화 → 뜻이 바뀐 수정\n긴 문장이 크게 줄었는데 모양이 없음 → 확인 필요\n그 밖 → 표현 수정</pre>';
   }
 
