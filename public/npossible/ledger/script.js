@@ -47,6 +47,7 @@
     publishedScope: null,
     seen: 0,
     log: [],
+    editScope: null,
     title: "주말에 다녀온 길",
     body: "어제는 오랜만에 집 근처 산책로를 걸었다. 사람이 적어서 조용했고, 나무 색이 벌써 달라져 있었다.",
     pendingScope: null
@@ -309,30 +310,40 @@
   function openEdit() {
     $("eTitle").value = $("fTitle").value;
     $("eBody").value = $("fBody").value;
+    S.editScope = S.publishedScope;
     $("editCurrent").textContent = POLICY[S.publishedScope].label + " · " + POLICY[S.publishedScope].audience;
-    $("editFormScope").textContent = POLICY.neighbor.label;
+    $("editFormScope").textContent = POLICY[S.editScope].label;
     $("driftBox").hidden = true;
-    S.scope = "neighbor";
     show("edit");
     renderBand();
-    announce("수정 화면입니다. 지금 적용 중인 범위는 " + POLICY[S.publishedScope].label + "이고, 이 화면의 값은 " + POLICY.neighbor.label + "입니다.");
+    announce("수정 화면입니다. 지금 적용 중인 범위는 " + POLICY[S.publishedScope].label + "이고, 이 화면도 같은 범위로 열렸습니다. 본문만 고치면 범위는 그대로입니다.");
   }
 
-  function saveEdit(forceKeep) {
+  /* 이 화면을 연 뒤 다른 기기에서 범위가 바뀐 상황 */
+  function simulateRemote() {
+    var order = ["neighbor", "public", "private"];
+    var next = order[(order.indexOf(S.publishedScope) + 1) % 3];
+    S.publishedScope = next;
+    $("editCurrent").textContent = POLICY[next].label + " · " + POLICY[next].audience;
+    renderBand();
+    announce("다른 기기에서 공개 범위가 " + POLICY[next].label + "로 바뀌었습니다. 이 화면의 값은 " + POLICY[S.editScope].label + "입니다. 이대로 저장하면 덮어씁니다.");
+  }
+
+  function saveEdit(mode) {
     var title = $("eTitle").value.trim();
     var bodyText = $("eBody").value.trim();
     if (!title) title = "(제목 없음)";
     if (!bodyText) bodyText = "(본문 없음)";
 
-    var current = S.publishedScope;
-    var form = S.scope;
+    var server = S.publishedScope;
+    var mine = S.editScope || server;
 
-    if (form !== current && !forceKeep) {
-      $("driftText").innerHTML = "지금은 <b>" + esc(POLICY[current].label) + "</b>인데, 이 화면에서 저장하면 <b>" +
-        esc(POLICY[form].label) + "</b>가 됩니다. 본문만 고치려던 거라면 원래 범위를 유지하세요.";
+    if (server !== mine && !mode) {
+      $("driftText").innerHTML = "이 화면을 연 뒤 다른 기기에서 공개 범위가 <b>" + esc(POLICY[server].label) +
+        "</b>로 바뀌었습니다. 이 화면의 값은 <b>" + esc(POLICY[mine].label) + "</b>입니다. 이대로 저장하면 다른 기기에서 고른 범위를 덮어씁니다.";
       $("driftBox").hidden = false;
       $("btnKeepScope").focus();
-      announce("저장하면 공개 범위가 " + POLICY[form].label + "로 바뀝니다. 원래 범위를 유지할지, 바뀐 범위로 저장할지 고르세요.");
+      announce("저장하면 다른 기기에서 바꾼 공개 범위를 덮어씁니다. 서버 값을 유지할지, 이 화면 값으로 덮어쓸지 고르세요.");
       return;
     }
 
@@ -340,20 +351,19 @@
     $("fBody").value = bodyText;
     $("driftBox").hidden = true;
 
-    var target = forceKeep ? current : form;
-    var changed = target !== current;
+    var target = mode === "overwrite" ? mine : server;
+    var changed = target !== server;
     if (changed) {
       S.publishedScope = target;
-      S.scope = target;
       $("appliedVal").textContent = POLICY[target].label;
       $("audienceVal").textContent = POLICY[target].audience;
       $("searchNote").textContent = POLICY[target].search;
       syncScopeButtons($("scopeChange"), target);
     }
-    addLog("수정 저장", changed ? current : null, target);
+    addLog("수정 저장", changed ? server : null, target);
     show("published");
     announce(changed
-      ? "수정을 저장했습니다. 공개 범위는 " + POLICY[current].label + "에서 " + POLICY[target].label + "로 바뀌었습니다."
+      ? "수정을 저장했습니다. 다른 기기의 " + POLICY[server].label + "를 이 화면 값 " + POLICY[target].label + "로 덮어썼습니다."
       : "수정을 저장했습니다. 공개 범위는 " + POLICY[target].label + " 그대로입니다.");
   }
 
@@ -431,8 +441,9 @@
       show("published");
       announce("수정을 취소했습니다. 올린 글은 그대로입니다.");
     });
-    $("btnKeepScope").addEventListener("click", function () { saveEdit(true); });
-    $("btnChangeScope").addEventListener("click", function () { saveEdit(false); });
+    $("btnKeepScope").addEventListener("click", function () { saveEdit("keepServer"); });
+    $("btnChangeScope").addEventListener("click", function () { saveEdit("overwrite"); });
+    $("btnRemote").addEventListener("click", simulateRemote);
 
     $("btnReset").addEventListener("click", function () {
       S.rev = 1;
@@ -440,6 +451,7 @@
       S.seen = 0;
       S.publishedScope = null;
       S.pendingScope = null;
+      S.editScope = null;
       S.scope = "neighbor";
       syncScopeButtons(composeScopes, "neighbor");
       $("backResult").hidden = true;
@@ -451,7 +463,7 @@
     $("primary").addEventListener("click", function () {
       if (S.screen === "compose") publish();
       else if (S.screen === "published") openEdit();
-      else saveEdit(false);
+      else saveEdit();
     });
 
     /* 탭 */

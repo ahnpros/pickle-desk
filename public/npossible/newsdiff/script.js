@@ -120,6 +120,7 @@
         if (sim >= MATCH_MIN) pairs.push({ i: i, j: j, sim: sim });
       }
     }
+    var all = pairs.slice();
     pairs.sort(function (a, b) { return b.sim - a.sim; });
     var usedBase = {}, usedNew = {}, match = {};
     for (var k = 0; k < pairs.length; k++) {
@@ -128,7 +129,12 @@
       usedBase[p.i] = 1; usedNew[p.j] = 1;
       match[p.j] = { i: p.i, sim: p.sim };
     }
-    return { match: match, usedBase: usedBase };
+    return { match: match, usedBase: usedBase, all: all };
+  }
+
+  /* 기사가 스스로 밝힌 정정 표시만 잡는다. 문장 차이로 정정을 추정하지 않는다. */
+  function isCorrection(text) {
+    return /정정|바로잡|철회|앞서 보도|앞서 밝혔/.test(String(text));
   }
 
   function numChanges(baseText, newText) {
@@ -158,7 +164,7 @@
   function buildDiff(baseId, newId) {
     var base = art(baseId), neu = art(newId);
     var al = align(base.sents, neu.sents);
-    var items = [], numRows = [], added = 0, changed = 0, same = 0;
+    var items = [], numRows = [], added = 0, changed = 0, same = 0, fixed = 0;
 
     for (var j = 0; j < neu.sents.length; j++) {
       var ns = neu.sents[j];
@@ -177,6 +183,9 @@
           }
           items.push({ kind: "chg", text: ns.t, old: bs.t, src: ns.src, sim: m.sim, nums: nc });
         }
+      } else if (isCorrection(ns.t)) {
+        fixed += 1;
+        items.push({ kind: "fix", text: ns.t, src: ns.src, sim: 0 });
       } else {
         added += 1;
         items.push({ kind: "add", text: ns.t, src: ns.src, sim: 0 });
@@ -189,17 +198,28 @@
         items.push({ kind: "rem", text: base.sents[i].t, src: base.sents[i].src, sim: 0 });
       }
     }
+
+    /* 임계값 경계(0.35~0.65)에 걸린 짝을 그대로 보여 준다. */
+    var edge = [];
+    for (var e = 0; e < al.all.length; e++) {
+      var p = al.all[e];
+      if (p.sim >= 0.35 && p.sim <= 0.65) {
+        edge.push({ baseText: base.sents[p.i].t, newText: neu.sents[p.j].t, sim: p.sim, matched: !!(al.match[p.j] && al.match[p.j].i === p.i) });
+      }
+    }
+    edge.sort(function (a, b) { return b.sim - a.sim; });
+
     numRows.sort(function (a, b) { return a.unit < b.unit ? -1 : 1; });
     return {
-      base: base, neu: neu, items: items, nums: numRows,
-      added: added, changed: changed, same: same, removed: removed,
+      base: base, neu: neu, items: items, nums: numRows, edge: edge.slice(0, 6),
+      added: added, changed: changed, same: same, removed: removed, fixed: fixed,
       numCount: numRows.length
     };
   }
 
   /* ---------- 렌더 ---------- */
   function badge(kind) {
-    return kind === "add" ? "새로 밝혀짐" : kind === "chg" ? "바뀜" : kind === "rem" ? "빠짐·정정" : "그대로";
+    return kind === "add" ? "새로 밝혀짐" : kind === "chg" ? "바뀜" : kind === "rem" ? "빠짐" : kind === "fix" ? "정정 표시" : "그대로";
   }
 
   function render() {
@@ -207,6 +227,7 @@
     $("cAdd").textContent = d.added;
     $("cChg").textContent = d.changed;
     $("cRem").textContent = d.removed;
+    $("cFix").textContent = d.fixed;
     $("cSame").textContent = d.same;
     $("cNum").textContent = d.numCount;
 
@@ -225,7 +246,7 @@
         html += "<p>" + markNumbers(it.text, it.old) + "</p>";
         html += '<p class="old">이전: <s>' + esc(it.old) + "</s></p>";
       } else if (it.kind === "rem") {
-        html += "<p><s>" + esc(it.text) + "</s> <span class=\"tiny muted\">— 이 기사에는 없습니다</span></p>";
+        html += "<p><s>" + esc(it.text) + "</s></p><p class=\"old\">이 기사에는 없습니다. 정정된 것인지 단순히 빠진 것인지 이 화면은 판단하지 않습니다.</p>";
       } else {
         html += "<p>" + esc(it.text) + "</p>";
       }
@@ -247,12 +268,26 @@
       nb.innerHTML = '<tr><td colspan="4" class="muted small">숫자가 바뀐 문장이 없습니다.</td></tr>';
     }
 
+    var eb = $("edgeBody");
+    if (d.edge.length) {
+      var erows = "";
+      for (var x = 0; x < d.edge.length; x++) {
+        var e = d.edge[x];
+        erows += "<tr><td class=\"small\">" + esc(e.baseText) + "</td><td class=\"small\">" + esc(e.newText) +
+          "</td><td><b>" + e.sim.toFixed(2) + "</b></td><td class=\"small\">" +
+          (e.matched ? "짝지어짐" : "짝 안 지어짐(따로 셈)") + "</td></tr>";
+      }
+      eb.innerHTML = erows;
+    } else {
+      eb.innerHTML = '<tr><td colspan="4" class="muted small">경계에 걸린 짝이 없습니다.</td></tr>';
+    }
+
     $("btnAll").textContent = S.showSame ? "그대로인 문장 숨기기" : "그대로인 문장 보기";
     $("btnAll").setAttribute("aria-pressed", S.showSame ? "true" : "false");
     $("btnAll").className = S.showSame ? "btn on" : "btn";
 
     announce("새로 밝혀진 문장 " + d.added + "개, 바뀐 문장 " + d.changed + "개, 빠진 문장 " + d.removed +
-      "개, 숫자 변화 " + d.numCount + "곳입니다. 화면에 " + shown + "줄을 보여 줍니다.");
+      "개, 정정 표시 " + d.fixed + "개, 숫자 변화 " + d.numCount + "곳입니다. 화면에 " + shown + "줄을 보여 주고, 경계 사례 " + d.edge.length + "건을 따로 적었습니다.");
 
     renderReadMark();
   }
