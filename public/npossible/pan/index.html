@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>판 첫 글 — 공개 범위를 버튼에 적으면 | sun-pickle</title>
+<style>
+  :root{
+    --bg:#f6f7f8; --card:#fff; --ink:#16181d; --muted:#5f6672; --line:#e3e6ea;
+    --green:#03c75a; --green-d:#02a94b; --green-soft:#e8f8ef; --warn:#b45309; --warn-soft:#fff4e5;
+    --red:#c0392b; --focus:#1a73e8; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px -12px rgba(16,24,40,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:#0b6b3a}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 18px 80px}
+  header.top{border-bottom:1px solid var(--line);background:#fff}
+  .top-in{max-width:1120px;margin:0 auto;padding:18px 18px 14px}
+  .kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  h1{font-size:26px;line-height:1.28;margin:6px 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  nav.tabs{max-width:1120px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow:auto}
+  nav.tabs button{border:0;background:none;padding:13px 12px;font:inherit;font-weight:600;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--green)}
+  nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:6px 6px 0 0}
+  section[role="tabpanel"][hidden]{display:none}
+  .grid{display:grid;grid-template-columns:390px 1fr;gap:28px;align-items:start}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  h2{font-size:17px;margin:0 0 10px;letter-spacing:-.01em}
+  h3{font-size:14px;margin:18px 0 6px;color:var(--ink)}
+  p{margin:0 0 10px}
+  ul,ol{margin:0 0 10px;padding-left:20px}
+  li{margin:3px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+  .tiny{font-size:12px}
+  code{background:#f1f3f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}
+  .pill.g{background:var(--green-soft);color:#0b6b3a}
+  .pill.w{background:var(--warn-soft);color:var(--warn)}
+  .pill.n{background:#eef1f5;color:#3d4552}
+
+  /* ---------- phone prototype ---------- */
+  .phone{width:390px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden;
+    box-shadow:0 20px 50px -24px rgba(16,24,40,.35);position:relative;display:flex;flex-direction:column;min-height:660px}
+  .ph-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;
+    position:sticky;top:0;z-index:5}
+  .ph-head .bk{border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--ink);padding:4px 6px;border-radius:8px}
+  .ph-head .ttl{font-weight:700;font-size:15px}
+  .ph-head .sp{flex:1}
+  .ph-head .mini{font-size:12px;color:var(--muted)}
+  .scope-bar{margin:10px 12px 0;border-radius:12px;border:1px solid var(--line);background:#fbfcfd;padding:10px 12px;
+    display:flex;align-items:flex-start;gap:10px;transition:.18s}
+  .scope-bar.risk{border-color:#f2c2a8;background:var(--warn-soft)}
+  .scope-bar .ico{width:20px;height:20px;flex:0 0 20px;margin-top:2px}
+  .scope-bar .who{font-weight:700;font-size:14px}
+  .scope-bar .why{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .scope-bar.risk .why{color:#8a4b12}
+  .scope-bar .chg{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 9px;
+    font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .scope-bar .chg:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .compose{padding:12px 14px 6px;flex:1}
+  .compose input[type=text]{width:100%;border:0;font:inherit;font-size:17px;font-weight:700;padding:6px 0;outline:none}
+  .compose textarea{width:100%;border:0;font:inherit;font-size:14.5px;padding:6px 0;outline:none;resize:vertical;min-height:150px}
+  .compose input:focus-visible,.compose textarea:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+  .hint{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;padding:0 14px 4px}
+  .footbar{border-top:1px solid var(--line);padding:10px 12px;display:flex;align-items:center;gap:8px;background:#fff;position:sticky;bottom:0}
+  .footbar .cur{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);min-width:0}
+  .footbar .cur b{color:var(--ink)}
+  .btn{border:0;border-radius:11px;padding:11px 14px;font:inherit;font-weight:800;cursor:pointer;font-size:14px}
+  .btn.pri{background:var(--green);color:#08301b;margin-left:auto;max-width:64%;text-align:center;line-height:1.3}
+  .btn.pri:hover{background:var(--green-d);color:#fff}
+  .btn.pri.risk{background:#f59e0b;color:#3a2200}
+  .btn.ghost{background:#f1f3f6;color:var(--ink)}
+  .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .sheet{border-top:1px solid var(--line);background:#fafbfc;padding:14px 12px;max-height:0;overflow:hidden;transition:max-height .25s ease}
+  .sheet.open{max-height:520px;overflow:auto}
+  .opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:#fff;border:1px solid var(--line);
+    border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;font:inherit}
+  .opt[aria-checked="true"]{border-color:var(--green);box-shadow:0 0 0 2px var(--green-soft) inset}
+  .opt:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .opt .dot{width:18px;height:18px;border-radius:50%;border:2px solid #c8ced6;flex:0 0 18px;margin-top:2px;position:relative}
+  .opt[aria-checked="true"] .dot{border-color:var(--green)}
+  .opt[aria-checked="true"] .dot::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--green)}
+  .opt .nm{font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}
+  .opt .de{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .opt .reach{font-size:12px;margin-top:6px;color:#0b6b3a;font-weight:700}
+  .faces{display:flex;gap:-4px;margin-top:6px}
+  .faces i{width:20px;height:20px;border-radius:50%;background:#dfe4ea;display:inline-block;margin-right:-6px;
+    border:2px solid #fff;font-style:normal}
+  .faces i:nth-child(2){background:#cfd8e3}.faces i:nth-child(3){background:#e6dcd0}
+  .note{font-size:12px;color:var(--muted);margin:6px 2px 2px}
+  .result{padding:18px 14px;text-align:left}
+  .result .ok{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px}
+  .check{width:22px;height:22px;border-radius:50%;background:var(--green-soft);color:#0b6b3a;display:grid;place-items:center;font-size:13px}
+  .recon{font-size:12.5px;background:#f7f9fa;border:1px dashed var(--line);border-radius:10px;padding:9px 11px;margin:10px 0}
+  .recon div{display:flex;justify-content:space-between;gap:8px}
+  .row{display:flex;gap:8px;margin-top:10px}
+  .preview{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 2px}
+  .preview .pt{font-weight:800;font-size:15px}
+  .preview .pb{font-size:13.5px;color:#2c333d;white-space:pre-wrap;margin-top:6px}
+  .preview .pm{font-size:11.5px;color:var(--muted);margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+  .log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.7;background:#0f1720;color:#c8e6d0;
+    border-radius:10px;padding:10px 12px;max-height:190px;overflow:auto;margin:0}
+  .log b{color:#7ee2a8;font-weight:600}
+  .srtext{font-size:12.5px;background:#fffbea;border:1px solid #f2e2a8;border-radius:10px;padding:9px 11px;margin-top:8px;color:#5a4b10}
+  .srtext span{font-weight:800;color:#7a5c00}
+  .tag{display:inline-block;font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);margin:0 4px 4px 0;background:#fff}
+  .callout{border-left:3px solid var(--green);background:var(--green-soft);padding:10px 12px;border-radius:0 10px 10px 0;font-size:13.5px;margin:12px 0}
+  .callout.warn{border-color:#f59e0b;background:var(--warn-soft)}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+  .kpi div{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff}
+  .kpi b{display:block;font-size:13px}
+  .kpi span{font-size:12px;color:var(--muted)}
+  hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+  footer.meta{max-width:1120px;margin:0 auto;padding:6px 18px 40px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="kicker">sun-pickle · Npossible 새판 시즌0 · 미션 <b>pan</b></div>
+    <h1>판 첫 글, 공개 범위를 ‘확인 창’이 아니라 <span style="background:linear-gradient(transparent 62%,#b7f0cd 0)">게시 버튼에 적는다</span></h1>
+    <p class="sub">누구에게 가는지를 누르는 순간의 문장으로 보여 줍니다 — 단계를 늘리지 않고, 숨은 설정을 자리로 옮깁니다.</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="출품작 구성">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">① 체험 (프로토타입)</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 문제 근거</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 화면 명세·엣지케이스</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 지표·검증·한계</button>
+  </nav>
+</header>
+
+<div class="wrap">
+
+<!-- ================= 1. PROTOTYPE ================= -->
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+  <div class="grid" style="margin-top:22px">
+    <div>
+      <div class="phone" id="phone">
+        <div class="ph-head">
+          <button class="bk" id="btnBack" aria-label="뒤로 가기">‹</button>
+          <div>
+            <div class="ttl" id="phTitle">판 글쓰기</div>
+            <div class="mini" id="phSub">첫 글 · 저장됨</div>
+          </div>
+          <div class="sp"></div>
+          <button class="btn ghost" id="btnPreview" style="padding:7px 10px;font-size:12.5px">미리보기</button>
+        </div>
+
+        <div class="scope-bar" id="scopeBar">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.2" stroke="#0b6b3a" stroke-width="1.8"/><path d="M5 20c.9-3.6 3.6-5.4 7-5.4s6.1 1.8 7 5.4" stroke="#0b6b3a" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div>
+            <div class="who" id="barWho">이웃 12명에게 공개</div>
+            <div class="why" id="barWhy">이웃을 맺은 사람만 볼 수 있어요. 검색에는 안 나와요.</div>
+          </div>
+          <button class="chg" id="btnChange" aria-expanded="false" aria-controls="sheet">바꾸기</button>
+        </div>
+
+        <div class="compose">
+          <label for="title" class="tiny muted" style="font-weight:700">제목</label>
+          <input id="title" type="text" value="동네 헬스장 3개월 다닌 후기" autocomplete="off">
+          <label for="body" class="tiny muted" style="font-weight:700;display:block;margin-top:6px">본문</label>
+          <textarea id="body">처음엔 기구 이름도 몰라서 한참 서성였어요. 지금은 아침 7시에 가면 사람이 적어서 좋더라고요. 혹시 자곡동 근처에 같이 다니실 분 있으면 댓글 주세요.</textarea>
+          <div class="hint"><span id="bodyCount">본문 87자 · 사진 0장</span><span>비속어 필터 켜짐</span></div>
+        </div>
+
+        <div class="sheet" id="sheet" role="radiogroup" aria-label="공개 범위 고르기">
+          <div class="tiny muted" style="margin:0 2px 8px;font-weight:700">이 글을 누가 볼 수 있나요?</div>
+          <button class="opt" role="radio" aria-checked="false" data-scope="public" id="opt-public">
+            <span class="dot"></span>
+            <span style="flex:1">
+              <span class="nm">전체 공개</span>
+              <span class="de">판에 들어온 누구나 볼 수 있어요</span>
+              <span class="reach">검색에도 잡혀요 · 나중에 지워도 이미 퍼진 링크는 남을 수 있어요</span>
+            </span>
+          </button>
+          <button class="opt" role="radio" aria-checked="true" data-scope="neighbor" id="opt-neighbor">
+            <span class="dot"></span>
+            <span style="flex:1">
+              <span class="nm">이웃 공개 <span class="pill g">기본값</span></span>
+              <span class="de">서로 이웃을 맺은 사람만 볼 수 있어요</span>
+              <span class="reach"><span class="faces"><i></i><i></i><i></i></span> 이웃 12명 · 검색에는 안 나와요</span>
+            </span>
+          </button>
+          <button class="opt" role="radio" aria-checked="false" data-scope="private" id="opt-private">
+            <span class="dot"></span>
+            <span style="flex:1">
+              <span class="nm">나만 보기</span>
+              <span class="de">저장만 하고 아무에게도 보여 주지 않아요</span>
+              <span class="reach">나중에 공개로 바꿀 수 있어요</span>
+            </span>
+          </button>
+          <div class="note" id="sheetNote">고르면 위쪽 띠와 게시 버튼 글자가 같이 바뀝니다.</div>
+        </div>
+
+        <div class="footbar" id="footbar">
+          <div class="cur"><span aria-hidden="true">👥</span><span>지금 <b id="curScope">이웃 12명</b></span></div>
+          <button class="btn pri" id="btnPost">이웃 12명에게 게시</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="btnReset" style="flex:1">처음부터 다시</button>
+        <button class="btn ghost" id="btnEdit" style="flex:1">수정 화면 열어 보기</button>
+      </div>
+      <p class="tiny muted" style="margin-top:10px">※ 실제 판 화면이 아니라, 판 글쓰기 흐름을 같은 순서로 재현한 프로토타입이에요. 아래 기록은 이 브라우저에서 실제로 누른 순서만 남깁니다(가짜 데이터 없음).</p>
+    </div>
+
+    <div>
+      <div class="card pad">
+        <h2>지금 이 화면에서 확인할 것</h2>
+        <ol class="small" style="margin-bottom:6px">
+          <li><b>아무것도 열지 않고 바로 게시</b>해 보세요 — 버튼에 ‘이웃 12명에게’가 적혀 있습니다.</li>
+          <li><b>전체 공개</b>를 골라 보세요 — 띠와 버튼이 경고색으로 바뀌고 문장이 ‘검색에도 잡혀요’로 바뀝니다.</li>
+          <li><b>뒤로 가기</b>를 눌러 보세요 — 쓰던 글과 고른 범위가 함께 남습니다.</li>
+          <li><b>수정 화면</b>을 열어 보세요 — 자료 3번(설정을 못 찾고 나옴)이 없어지는지.</li>
+          <li><b>화면 낭독기 문장</b>을 눌러 보세요 — 범위가 바뀔 때 읽히는 말을 그대로 보여 줍니다.</li>
+        </ol>
+      </div>
+
+      <div class="card pad" style="margin-top:14px">
+        <h2 style="display:flex;align-items:center;gap:8px">내 확인 순서 <span class="pill n" id="stepCount">0단계</span></h2>
+        <p class="tiny muted" style="margin-bottom:8px">이 페이지에서 실제로 누른 순서예요. 심사에서 ‘확인 순서가 남아 있는가’를 보는 기준에 그대로 대응하려고 넣었습니다.</p>
+        <pre class="log" id="log" aria-live="polite">(아직 아무 동작 없음)</pre>
+        <div class="row"><button class="btn ghost" id="btnSR" style="flex:1;font-size:13px">화면 낭독기가 읽는 문장 보기</button></div>
+        <div class="srtext" id="srBox" hidden></div>
+      </div>
+
+      <div class="card pad" style="margin-top:14px" id="previewCard" hidden>
+        <h2>받는 사람이 보는 그대로</h2>
+        <div class="preview">
+          <div class="pt" id="pvTitle">동네 헬스장 3개월 다닌 후기</div>
+          <div class="pb" id="pvBody"></div>
+          <div class="pm"><span id="pvScope">이웃 공개</span><span>·</span><span>작성자 닉네임</span><span>·</span><span id="pvTime">방금</span></div>
+        </div>
+        <p class="tiny muted" style="margin-top:8px">이 카드는 공개 범위에 따라 ‘보이는 사람’이 달라집니다. 전체 공개면 아래에 <b>검색 노출</b> 표시가 붙습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. PROBLEM ================= -->
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>미션 자료 4개를 그대로 화면 설계로 옮겼습니다</h2>
+    <p class="small muted">자료는 “설정이 없다”가 아니라 “쓸 때·고칠 때 그 자리에 없다”는 걸 보여 줍니다. 그래서 새 설정 화면을 만드는 대신, 이미 있는 흐름의 <b>문장과 자리</b>를 바꿉니다.</p>
+    <table>
+      <thead><tr><th style="width:34%">자료</th><th style="width:33%">자료가 말하는 것</th><th>이 안에서의 대응</th></tr></thead>
+      <tbody>
+        <tr><td>기록 1 — 다 쓰고 범위는 한 번도 안 열고 게시</td><td>범위를 고르는 ‘행동’이 아예 일어나지 않음</td><td>고르지 않아도 게시 버튼 문구가 <b>‘이웃 12명에게 게시’</b>. 행동을 요구하지 않고 결과를 먼저 말함</td></tr>
+        <tr><td>기록 2 — 게시 후 글 아래 표시를 보고 되물음</td><td>게시 뒤에야 누구에게 갔는지 알게 됨</td><td>게시 결과 화면에 <b>고른 값 ↔ 실제 적용 값 대조</b>와 ‘지금 바꾸기’를 함께 둠</td></tr>
+        <tr><td>기록 3 — 수정 화면에서 설정 못 찾고 나옴</td><td>고칠 때 같은 자리에 없음</td><td>수정 화면 상단에도 같은 띠(<b>지금 이웃 12명에게 공개 중 · 바꾸기</b>)를 고정</td></tr>
+        <tr><td>기록 4 — 두 번째 글은 설정 화면부터 열어 봄</td><td>한 번 겪으면 배우지만 비용이 큼</td><td>처음 고른 값을 <b>다음 글에도 같은 자리</b>에 두고, 띠가 ‘지난번과 같아요’라고 알려 줌</td></tr>
+        <tr><td>모의 반응 — “글은 다 썼는데 누가 볼 수 있는지는 모르겠어요”</td><td>모르는 채로 게시하게 됨</td><td>띠의 두 문장(누가 / 검색 노출)을 <b>접지 않고</b> 항상 노출. 선택지마다 실제 인원·검색 여부를 붙임</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:14px">
+      <b>이미 나온 안과 다른 점.</b> 게시 직전 ‘확인 창’은 이미 시도된 방식입니다(사용자 반응: “갑자기 박스가 뜨니까 당황했어요”, “한 번뿐이라 놓치면 끝이에요”). 이 안은 <b>단계를 하나도 늘리지 않습니다.</b> 확인을 새 화면이 아니라 <b>이미 누르는 버튼의 글자</b>로 옮깁니다. 확인을 강요하지 않아도 매번 읽히는 자리이기 때문에, 눌러 버릇해 무시되는 문제도 생기지 않습니다.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. SPEC ================= -->
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>화면 상태 전이</h2>
+    <pre class="log" style="max-height:none;font-size:12px;color:#d7e9dd">[글쓰기]
+  ├─ 범위 미선택(첫 글)      → 버튼 = "이웃 12명에게 게시"(기본값 이름을 그대로 씀)
+  ├─ 범위 선택 = 이웃        → 띠 초록,  버튼 "이웃 12명에게 게시"
+  ├─ 범위 선택 = 전체        → 띠 주황,  버튼 "전체 공개로 게시"  + 문장 "검색에도 잡혀요"
+  └─ 범위 선택 = 나만        → 띠 회색,  버튼 "나만 보기로 저장"
+[게시]  → 서버 적용값 재조회(publish 응답의 effective_scope)
+        ├─ 일치 → "이웃 12명에게 공개했어요" + [지금 바꾸기]
+        └─ 불일치 → 게시 중단, "저장된 설정과 달라요. 다시 확인할게요" + 선택 시트 자동 열기
+[수정]  → 상단 띠에 현재 공개 상태 + [바꾸기] (기록 3 대응)
+[뒤로]  → 로컬 초안 저장(본문+제목+범위), 복귀 시 "작성 중인 글을 이어 씁니다"</pre>
+
+    <h3>문구 규칙 (한 곳에서 관리)</h3>
+    <p class="small">범위 이름·설명·인원·검색 노출 여부는 화면에 손으로 적지 않고 <code>scope_policy</code> 값에서 만듭니다. 정책이 바뀌면 띠·버튼·미리보기가 <b>동시에</b> 바뀌므로, 표시와 실제 권한이 어긋날 자리가 줄어듭니다.</p>
+    <pre class="log" style="max-height:none;font-size:12px;color:#d7e9dd">scope_policy = {
+  neighbor: { label:"이웃 공개",  short:"이웃 {n}명",        searchable:false,
+              why:"이웃을 맺은 사람만 볼 수 있어요. 검색에는 안 나와요." },
+  public:   { label:"전체 공개",  short:"전체 공개",         searchable:true,
+              why:"판 방문자 누구나 볼 수 있고 검색에도 잡혀요." },
+  private:  { label:"나만 보기",  short:"나만",              searchable:false,
+              why:"저장만 하고 아무에게도 보여 주지 않아요." }
+}
+// 버튼 라벨 = short + "에게 게시"  → 정책 수정이 곧 라벨 수정</pre>
+
+    <h3>엣지케이스</h3>
+    <table>
+      <thead><tr><th style="width:26%">상황</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>이웃이 0명</td><td>‘이웃 공개’ 카드에 “이웃이 아직 없어서 나만 볼 수 있어요”를 쓰고, 버튼은 <b>“나만 보기로 저장”</b>. 0명에게 게시하는 허수를 만들지 않음</td></tr>
+        <tr><td>쓰는 중 이웃이 줄어듦(12 → 9)</td><td>띠의 인원을 게시 시점에 다시 계산. 게시 결과에 “지금 이웃 9명에게 공개됐어요”로 확정값 표시</td></tr>
+        <tr><td>전체 공개 + 민감 표현</td><td>게시 전 비속어·개인정보(전화번호·주소 패턴) 검사. 걸리면 범위를 낮추도록 제안하고, 그 사실을 버튼 옆에 한 줄로 표시</td></tr>
+        <tr><td>다른 기기에서 범위를 바꿈</td><td>게시 요청에 <code>scope_rev</code>를 실어 보내고, 서버 값이 다르면 게시 중단 후 재확인</td></tr>
+        <tr><td>오프라인·느린 회선</td><td>버튼은 로컬 정책값으로 즉시 그려지고(문구 지연 없음), 게시 결과만 서버 응답을 기다림. 실패 시 초안 유지</td></tr>
+        <tr><td>키보드만 사용</td><td>띠 → 바꾸기 → 라디오 3개 → 게시 순서로 Tab 이동. 라디오는 화살표 키로 이동, 선택 즉시 띠·버튼 라벨 갱신</td></tr>
+        <tr><td>화면 낭독기</td><td>범위 변경 시 <code>aria-live=polite</code>로 “공개 범위가 이웃 12명에게 공개로 바뀌었습니다. 게시 버튼: 이웃 12명에게 게시”를 읽음</td></tr>
+        <tr><td>색 구분이 어려움</td><td>초록/주황을 색만으로 쓰지 않고 <b>문장</b>(검색에도 잡혀요)과 <b>버튼 라벨</b>로 구분. 대비 4.5:1 이상</td></tr>
+        <tr><td>이미 게시한 글 수정</td><td>수정 화면에서도 같은 띠. 저장 시 “이웃 12명 → 전체 공개”처럼 <b>바뀐 방향</b>을 한 줄로 확인</td></tr>
+      </tbody>
+    </table>
+
+    <h3>부작용과 완화</h3>
+    <ul class="small">
+      <li><b>안내 피로</b> — 띠를 크게 만들지 않고 12px 두 줄로 고정. 반복 사용자는 문장을 읽지 않아도 버튼 라벨에서 답을 얻음.</li>
+      <li><b>인원 표시의 정확성</b> — ‘이웃 12명’은 캐시가 아니라 게시 시점 계산값. 캐시를 쓰면 5분 지연을 명시(“약 12명”)하고, 게시 결과에서 확정값을 다시 보여 줌.</li>
+      <li><b>프라이버시</b> — 이웃 수는 내 화면에만 보이고 상대에게 노출하지 않음. 다른 사람 글에는 인원을 표시하지 않음.</li>
+      <li><b>게시 완료율 하락</b> — 추가 단계가 없으므로 하락 요인은 문구 길이뿐. A/B로 게시 완료율을 가드레일 지표로 감시(아래 ④).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 4. METRICS ================= -->
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>무엇을 재고, 무엇을 아직 모르는가</h2>
+    <p class="small">이 출품에는 아직 <b>실사용자 검증 결과가 없습니다.</b> 대신 (1) 이 페이지에서 실제로 남는 행동 기록, (2) 배포 직후 바로 돌릴 수 있는 측정 설계, (3) 지금 확인할 수 없는 것을 구분해 적었습니다.</p>
+
+    <h3>1) 지금 이 페이지에서 실제로 확인되는 것</h3>
+    <ul class="small">
+      <li>범위를 열지 않고 게시할 때 버튼에 인원이 적혀 있는지 — 체험 탭의 <b>내 확인 순서</b>에 그대로 남습니다.</li>
+      <li>전체 공개를 골랐을 때 버튼 라벨과 띠 문장이 함께 바뀌는지 — 잘못된 상태가 하나만 바뀌는 경우가 없도록 <b>한 상태에서 파생</b>되게 구현했습니다.</li>
+      <li>뒤로 가기 후 초안·범위가 남는지 — 보고 있던 화면에서 바로 확인 가능.</li>
+    </ul>
+    <p class="tiny muted">※ 심사자가 이 페이지에서 누른 순서는 서버로 전송하지 않습니다. 브라우저 안에서만 보입니다.</p>
+
+    <h3>2) 배포하면 이렇게 잽니다 (이벤트 정의)</h3>
+    <table>
+      <thead><tr><th style="width:34%">이벤트</th><th style="width:22%">시점</th><th>쓰임</th></tr></thead>
+      <tbody>
+        <tr><td><code>compose_view</code></td><td>글쓰기 진입</td><td>분모. 첫 글/재방문 구분 속성 포함</td></tr>
+        <tr><td><code>scope_bar_impression</code></td><td>띠가 화면에 1초 이상 노출</td><td>‘보였는데도 안 고른 비율’의 분모</td></tr>
+        <tr><td><code>scope_open</code> / <code>scope_change</code></td><td>시트 열기 / 값 변경</td><td>범위를 만지지 않고 게시하는 비율(기록 1)</td></tr>
+        <tr><td><code>post_click</code> → <code>post_result</code></td><td>게시 누름 / 결과 표시</td><td>게시 완료율(가드레일), 대조 불일치 건수</td></tr>
+        <tr><td><code>scope_fix_within_10m</code></td><td>게시 후 10분 내 범위 변경</td><td>“올리고 나서 되물음”(기록 2)의 대체 지표</td></tr>
+        <tr><td><code>edit_scope_visible</code></td><td>수정 화면 띠 노출</td><td>수정 화면 이탈률(기록 3)</td></tr>
+      </tbody>
+    </table>
+    <div class="kpi">
+      <div><b>첫 글 무범위 게시율</b><span>기준선 측정 → 목표 30% 감소</span></div>
+      <div><b>게시 후 10분 내 범위 변경</b><span>기록 2의 정량판, 목표 20% 감소</span></div>
+      <div><b>게시 완료율</b><span>가드레일, 2%p 이상 하락 시 롤백</span></div>
+      <div><b>대조 불일치율</b><span>0.01% 초과 시 배포 중단</span></div>
+    </div>
+
+    <h3>3) A/B 설계</h3>
+    <ul class="small">
+      <li><b>A</b> 현행(설정 숨김) / <b>B</b> 버튼 라벨 + 상단 띠 / <b>C</b> B + 게시 직전 확인창(이미 나온 안)</li>
+      <li>단위: 사용자 단위 무작위 배정(첫 글 작성자만), 기간 2주, 표본은 첫 글 작성자 기준 주 1,000명 이상일 때 1주차 중간 분석 없이 종료.</li>
+      <li>주 지표: 첫 글 무범위 게시율. 보조: 게시 후 범위 변경률. 가드레일: 게시 완료율, 작성 소요 시간.</li>
+      <li>C가 B보다 나으면 확인창을 되살리는 게 아니라, <b>B의 문장을 더 구체화</b>하는 쪽으로 해석합니다(단계 추가는 비용이 크고, 무시 습관이 생김).</li>
+    </ul>
+
+    <h3>4) 아직 확인하지 못한 것</h3>
+    <ul class="small">
+      <li>초보자가 ‘이웃 12명’이라는 문구에서 <b>실제로 범위를 이해하는지</b> — 인지 인터뷰 필요(5명, 15분). 이 출품에는 없다.</li>
+      <li>버튼 라벨이 길어졌을 때 모바일에서 잘리지 않는지 — 실제 판 UI 폭·폰트에서 재확인 필요.</li>
+      <li>‘확인 피로’가 실제로 줄어드는지 — B/C 비교 결과 없이는 단정하지 않음.</li>
+      <li>이웃 수 계산의 서버 비용 — 이웃 목록이 큰 계정(수천 명)에서의 응답 시간 미측정.</li>
+    </ul>
+    <div class="callout warn small"><b>주장하지 않는 것.</b> “공개 사고가 줄어든다”는 결과는 아직 없습니다. 이 출품이 보이는 것은 <b>설계와 재현 가능한 프로토타입</b>, 그리고 <b>측정 계획</b>까지입니다.</div>
+  </div>
+</section>
+
+<footer class="meta">
+  sun-pickle · Pickle · Npossible 새판 시즌0 · 미션 pan · 자료: 미션 기록 1~4 + 모의 반응 · 저작물 CC BY-SA 4.0, 코드 GPL-3.0
+</footer>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
