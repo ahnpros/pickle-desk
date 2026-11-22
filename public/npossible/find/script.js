@@ -273,6 +273,23 @@
     return scored.map(function(x){ return x.doc.id; });
   }
 
+  function strictEngine(q){
+    var toks = norm(q).split(" ").filter(function(t){ return t.length>=2; });
+    var scored = DOCS.map(function(doc){
+      var t = norm(doc.title), g = norm(doc.tags), b = norm(doc.body), all = t+" "+g+" "+b, sc = 0;
+      var every = toks.every(function(tok){ return all.indexOf(tok)>=0; });
+      if(!every) return {doc:doc, sc:0};
+      toks.forEach(function(tok){
+        if(t.indexOf(tok)>=0) sc += FIELD.title;
+        else if(g.indexOf(tok)>=0) sc += FIELD.tags;
+        else sc += FIELD.body;
+      });
+      return {doc:doc, sc:sc};
+    }).filter(function(x){ return x.sc>0; });
+    scored.sort(function(a,b){ return b.sc-a.sc; });
+    return scored.map(function(x){ return x.doc.id; });
+  }
+
   function fragmentEngine(q){
     var frags = extractFragments(q);
     var scored = DOCS.map(function(doc){
@@ -285,32 +302,37 @@
 
   if($("benchSummary")){
     var rows = GOLD.map(function(g){
-      var k = keywordEngine(g.q), f = fragmentEngine(g.q);
+      var k = keywordEngine(g.q), st = strictEngine(g.q), f = fragmentEngine(g.q);
       return {
         q:g.q,
         gold:g.id,
-        k1:k[0], k3:k.slice(0,3).indexOf(g.id)>=0, f1:f[0], f3:f.slice(0,3).indexOf(g.id)>=0,
-        khit: k[0]===g.id, fhit: f[0]===g.id
+        k1:k[0], k3:k.slice(0,3).indexOf(g.id)>=0,
+        s1:st[0], s3:st.slice(0,3).indexOf(g.id)>=0,
+        f1:f[0], f3:f.slice(0,3).indexOf(g.id)>=0,
+        khit: k[0]===g.id, shit: st[0]===g.id, fhit: f[0]===g.id
       };
     });
     var k1 = rows.filter(function(r){return r.khit;}).length;
     var k3 = rows.filter(function(r){return r.k3;}).length;
+    var s1 = rows.filter(function(r){return r.shit;}).length;
+    var s3 = rows.filter(function(r){return r.s3;}).length;
     var f1 = rows.filter(function(r){return r.fhit;}).length;
     var f3 = rows.filter(function(r){return r.f3;}).length;
     var n = rows.length;
     $("benchSummary").innerHTML =
       '<div class="kpi">'+
-      '<div><b>조각 검색 hit@1</b><span>'+f1+'/'+n+'</span></div>'+
-      '<div><b>조각 검색 hit@3</b><span>'+f3+'/'+n+'</span></div>'+
-      '<div><b>키워드 검색 hit@1</b><span>'+k1+'/'+n+'</span></div>'+
-      '<div><b>키워드 검색 hit@3</b><span>'+k3+'/'+n+'</span></div>'+
+      '<div><b>조각 검색 hit@1 / hit@3</b><span>'+f1+'/'+n+' · '+f3+'/'+n+'</span></div>'+
+      '<div><b>키워드(느슨·하나라도) hit@1 / hit@3</b><span>'+k1+'/'+n+' · '+k3+'/'+n+'</span></div>'+
+      '<div><b>키워드(엄격·모두 일치) hit@1 / hit@3</b><span>'+s1+'/'+n+' · '+s3+'/'+n+'</span></div>'+
       '</div>';
     function title(id){ var d=DOCS.filter(function(x){return x.id===id;})[0]; return d ? d.title : "—"; }
-    $("benchTable").innerHTML = '<table><thead><tr><th>질의</th><th>정답 문서</th><th>키워드 1위</th><th>조각 1위</th></tr></thead><tbody>'+
+    function cell(ok, id){
+      return '<td style="color:'+(ok?"#0b6b3a":"#b3261e")+'">'+(ok?"적중":"실패 — ")+escapeHtml(title(id))+'</td>';
+    }
+    $("benchTable").innerHTML = '<table><thead><tr><th>질의</th><th>정답 문서</th><th>키워드(느슨) 1위</th><th>키워드(엄격) 1위</th><th>조각 검색 1위</th></tr></thead><tbody>'+
       rows.map(function(r){
         return '<tr><td>'+escapeHtml(r.q)+'</td><td>'+escapeHtml(title(r.gold))+'</td>'+
-          '<td style="color:'+(r.khit?"#0b6b3a":"#b3261e")+'">'+(r.khit?"적중":"실패 — ")+escapeHtml(title(r.k1))+'</td>'+
-          '<td style="color:'+(r.fhit?"#0b6b3a":"#b3261e")+'">'+(r.fhit?"적중":"실패 — ")+escapeHtml(title(r.f1))+'</td></tr>';
+          cell(r.khit, r.k1)+cell(r.shit, r.s1)+cell(r.fhit, r.f1)+'</tr>';
       }).join('')+'</tbody></table>';
   }
 
@@ -331,7 +353,7 @@
     $(id).addEventListener("change", function(){ logLine("필터 — "+id+"="+$(id).value); run(false); });
   });
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"]];
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"]];
   function selectTab(id){
     tabs.forEach(function(p){
       var on = p[0]===id;
