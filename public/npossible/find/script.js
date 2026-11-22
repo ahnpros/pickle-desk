@@ -72,7 +72,9 @@
     var raw = norm(q).split(" ").filter(Boolean);
     var frags = [], seen = {};
     var stop = {"그거":1,"있잖아":1,"혹시":1,"같은데":1,"봤는데":1,"인데":1,"얘기":1,"본":1,"때":1,"거":1,"좀":1,"것":1};
-    raw.forEach(function(t){
+    raw.forEach(function(t0){
+      var t = stripParticle(t0);
+      if(!t) return;
       // 숫자+단위는 따로
       var m = t.match(/(\d+(\.\d+)?)%?/);
       var candidates = [t];
@@ -214,7 +216,7 @@
 
     var top = hits.slice(0,6);
     box.innerHTML = top.map(function(h, i){
-      var d = h.doc, pct = Math.round(Math.min(1, h.score) * 100);
+      var d = h.doc;
       var topScore = hits[0].score || 1;
       var rel = Math.round(h.score / topScore * 100);
       var why = h.m.details.slice(0,4).map(function(x){ return x.frag + " (" + (FIELD_LABEL[x.field]||"") + " " + x.how + ")"; }).join(" · ");
