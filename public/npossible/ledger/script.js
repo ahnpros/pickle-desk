@@ -28,7 +28,7 @@
     },
     private: {
       label: "나만 보기",
-      audience: "아무도 없음 (나만)",
+      audience: "아무도 없음",
       band: "나만 보기 — 올린 뒤에도 내 화면에만 남아요.",
       bandEdit: "나만 보기 — 이 글은 아무에게도 보이지 않아요.",
       button: "나만 보기로 저장",
@@ -179,8 +179,10 @@
     for (var i = 0; i < S.log.length; i++) {
       var r = S.log[i];
       rows += '<tr><td class="n">' + r.rev + "</td><td class=\"n\">" + r.at + "</td><td>" +
-        esc(POLICY[r.to].label) + "<br><span class=\"strike\">" + (r.from ? esc(POLICY[r.from].label) : "—") +
-        "</span> <span class=\"arrow\">→</span> <b>" + esc(POLICY[r.to].label) + "</b></td><td>" + esc(r.where) +
+        (r.from
+          ? "<span class=\"strike\">" + esc(POLICY[r.from].label) + "</span> <span class=\"arrow\">→</span> <b>" + esc(POLICY[r.to].label) + "</b>"
+          : "<b>" + esc(POLICY[r.to].label) + "</b> <span class=\"tiny muted\">(게시된 범위)</span>") +
+        "</td><td>" + esc(r.where) +
         "</td><td class=\"n\">" + r.seen + "명</td></tr>";
     }
     body.innerHTML = rows;
@@ -296,6 +298,7 @@
     syncScopeButtons($("scopeChange"), to);
 
     addLog("올린 뒤 변경", from, to);
+    renderBand();
     announce("공개 범위가 " + POLICY[from].label + "에서 " + POLICY[to].label + "로 바뀌었습니다." +
       (S.seen > 0 ? " 이미 본 " + S.seen + "명에게는 글이 남습니다." : "") +
       (notify ? " 이웃 " + S.seen + "명에게 변경을 알렸습니다." : ""));
@@ -306,7 +309,7 @@
   function openEdit() {
     $("eTitle").value = $("fTitle").value;
     $("eBody").value = $("fBody").value;
-    $("editCurrent").textContent = POLICY[S.publishedScope].label + " (" + POLICY[S.publishedScope].audience + ")";
+    $("editCurrent").textContent = POLICY[S.publishedScope].label + " · " + POLICY[S.publishedScope].audience;
     $("editFormScope").textContent = POLICY.neighbor.label;
     $("driftBox").hidden = true;
     S.scope = "neighbor";
