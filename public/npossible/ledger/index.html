@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>공개 범위 장부 — 쓰기·올리기·고치기를 잇기 | sun-pickle</title>
+<meta name="description" content="판 첫 글의 공개 범위를 쓰는 동안·올린 뒤·고칠 때까지 한 장부로 잇는 동작 프로토타입.">
+<style>
+  :root{
+    --bg:#f6f7f8; --card:#fff; --ink:#16181d; --muted:#5b6371; --line:#e2e6ea;
+    --green:#03c75a; --green-d:#02944a; --green-soft:#e9f8f0;
+    --warn:#a2520b; --warn-soft:#fff5e8; --warn-line:#f0c48a;
+    --red:#b3261e; --red-soft:#fdeceb;
+    --blue:#0b5cc4; --blue-soft:#eaf1fd;
+    --focus:#1a4fd6; --shadow:0 1px 2px rgba(16,24,40,.06),0 10px 30px -18px rgba(16,24,40,.25);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.62 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:#0a5a33}
+  .wrap{max-width:1140px;margin:0 auto;padding:26px 18px 80px}
+  header.top{background:#fff;border-bottom:1px solid var(--line)}
+  .top-in{max-width:1140px;margin:0 auto;padding:18px 18px 14px}
+  .kicker{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  h1{font-size:25px;line-height:1.3;margin:6px 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  nav.tabs{max-width:1140px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow:auto}
+  nav.tabs button{border:0;background:none;padding:13px 11px;font:inherit;font-weight:600;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;font-size:13.5px}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--green)}
+  nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:8px 8px 0 0}
+  section[role="tabpanel"][hidden]{display:none}
+  .grid{display:grid;grid-template-columns:400px 1fr;gap:26px;align-items:start}
+  @media (max-width:960px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  h2{font-size:17px;margin:0 0 10px;letter-spacing:-.01em}
+  h3{font-size:14px;margin:18px 0 6px}
+  h4{font-size:13.5px;margin:14px 0 4px}
+  p{margin:0 0 10px}
+  ul,ol{margin:0 0 10px;padding-left:20px}
+  li{margin:4px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+  .tiny{font-size:12px}
+  code{background:#f1f3f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  pre{background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:12.5px;line-height:1.5}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:700;font-size:12.5px;color:#39414f}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800}
+  .pill.g{background:var(--green-soft);color:#0b6b3a}
+  .pill.w{background:var(--warn-soft);color:var(--warn)}
+  .pill.n{background:#eef1f5;color:#3d4552}
+  .pill.b{background:var(--blue-soft);color:var(--blue)}
+  .pill.r{background:var(--red-soft);color:var(--red)}
+  .skip{position:absolute;left:-9999px;top:0;background:#fff;padding:10px 14px;border:2px solid var(--focus);border-radius:0 0 8px 0;z-index:50}
+  .skip:focus{left:0}
+
+  /* ---------- phone prototype ---------- */
+  .phone{width:400px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden;
+    box-shadow:0 24px 60px -34px rgba(16,24,40,.5);position:relative;display:flex;flex-direction:column;min-height:680px}
+  .ph-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff}
+  .ph-head .ttl{font-weight:800;font-size:14.5px}
+  .ph-head .sp{flex:1}
+  .ph-head .mini{font-size:11.5px;color:var(--muted);background:#f2f4f7;border-radius:999px;padding:2px 8px;font-weight:700}
+  .band{padding:11px 14px;font-size:13.5px;line-height:1.45;border-bottom:1px solid var(--line);background:var(--green-soft);color:#08492c;
+    display:flex;gap:8px;align-items:flex-start}
+  .band.wide{background:var(--warn-soft);color:#6b3a06;border-bottom-color:var(--warn-line)}
+  .band.narrow{background:#eef1f5;color:#333b47}
+  .band .dot{width:9px;height:9px;border-radius:50%;background:currentColor;margin-top:6px;flex:0 0 auto;opacity:.7}
+  .ph-body{padding:14px;flex:1;overflow:auto;max-height:560px}
+  .ph-foot{border-top:1px solid var(--line);padding:11px 14px;background:#fff}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font:inherit;font-weight:700;font-size:13.5px;
+    cursor:pointer;color:var(--ink)}
+  .btn:hover{border-color:#b9c3cf}
+  .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .btn.primary{width:100%;background:var(--green);border-color:var(--green);color:#06301c;font-weight:800;padding:12px}
+  .btn.primary:hover{background:#02b852}
+  .btn.primary.wide{background:#c2410c;border-color:#c2410c;color:#fff}
+  .btn.ghost{background:#fff}
+  .btn.link{border:0;background:none;color:#0a5a33;text-decoration:underline;padding:2px 0;font-size:13px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12.5px;font-weight:800;color:#39414f;margin-bottom:5px}
+  .field input,.field textarea{width:100%;border:1px solid #d4dae1;border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;background:#fff}
+  .field textarea{min-height:120px;resize:vertical}
+  .field input:focus,.field textarea:focus{outline:2px solid var(--focus);outline-offset:1px;border-color:var(--focus)}
+  .scopes{display:grid;gap:6px;margin:8px 0 2px}
+  .scopes button{text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;font:inherit;font-size:13px;cursor:pointer}
+  .scopes button[aria-checked="true"]{border-color:var(--green);background:var(--green-soft);box-shadow:inset 0 0 0 1px var(--green)}
+  .scopes button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .scopes .lab{font-weight:800;font-size:13.5px;display:block}
+  .scopes .desc{color:var(--muted);font-size:12px}
+  .note{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+  .box{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfcfd;margin:10px 0}
+  .box.warn{background:var(--warn-soft);border-color:var(--warn-line)}
+  .box.stop{background:var(--red-soft);border-color:#eab6b2}
+  .box.ok{background:var(--green-soft);border-color:#b9e6cd}
+  .kv{display:grid;grid-template-columns:96px 1fr;gap:4px 10px;font-size:13px}
+  .kv dt{color:var(--muted)}
+  .kv dd{margin:0;font-weight:600}
+  .change{font-size:12.5px;display:flex;gap:8px;align-items:baseline}
+  .change b{font-variant-numeric:tabular-nums}
+  .strike{text-decoration:line-through;color:#7a828f}
+  .arrow{color:var(--muted)}
+  .live{border:1px dashed #b8c2cf;border-radius:10px;padding:10px;background:#fff;font-size:12.5px;color:#2c3440}
+  .checkline{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:8px 0}
+  .checkline input{margin-top:4px}
+  footer.page{max-width:1140px;margin:0 auto;padding:26px 18px 60px;color:var(--muted);font-size:12.5px}
+  .cmp td.h{width:112px;font-weight:800;font-size:12.5px;color:#39414f;background:#fbfcfd}
+  .tag{font-size:11px;font-weight:800;border-radius:6px;padding:1px 6px;background:#eef1f5;color:#3d4552;margin-right:6px}
+  .tag.add{background:var(--green-soft);color:#0b6b3a}
+  .tag.keep{background:var(--blue-soft);color:var(--blue)}
+  .tag.del{background:var(--red-soft);color:var(--red)}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:0}
+  .steps li{counter-increment:s;position:relative;padding-left:30px;margin:9px 0;font-size:13.5px}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%;
+    background:#eef1f5;color:#39414f;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  #ledgerTable td{font-size:12.5px}
+  #ledgerTable td.n{font-variant-numeric:tabular-nums}
+  .empty{font-size:12.5px;color:var(--muted);padding:10px 0}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">본문 바로가기</a>
+<header class="top">
+  <div class="top-in">
+    <div class="kicker">sun-pickle · 포크 · 미션 pan</div>
+    <h1>공개 범위는 한 번 고르는 값이 아니다</h1>
+    <p class="sub">원작(쓰는 동안 보이는 공개 범위)의 원칙은 그대로 두고, <b>올린 뒤</b>와 <b>고칠 때</b>를 이어 붙였습니다. 아래 프로토타입은 실제로 눌러서 확인할 수 있습니다.</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="출품물 섹션">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">① 체험 (프로토타입)</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 원작에서 가져온 것·바꾼 것</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 장부 명세</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 검증·한계</button>
+  </nav>
+</header>
+
+<main id="main" class="wrap">
+
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+  <div class="grid">
+    <div>
+      <div class="phone" id="phone">
+        <div class="ph-head">
+          <span class="ttl" id="headTitle">판에 글쓰기</span>
+          <span class="sp"></span>
+          <span class="mini" id="revMini">scope_rev 1</span>
+        </div>
+        <div class="band" id="band" role="status">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="bandText">이웃 12명에게 공개 — 이웃을 맺은 사람만 볼 수 있어요. 검색에는 안 나와요.</span>
+        </div>
+        <div class="ph-body" id="phBody">
+
+          <!-- 쓰기 -->
+          <section id="scr-compose" aria-labelledby="h-compose">
+            <h2 id="h-compose" tabindex="-1" style="font-size:15px">글쓰기</h2>
+            <div class="field">
+              <label for="fTitle">제목</label>
+              <input id="fTitle" type="text" placeholder="제목을 적어 주세요" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="fBody">본문</label>
+              <textarea id="fBody" placeholder="오늘 있었던 일을 적어 보세요."></textarea>
+            </div>
+            <div class="scopes" role="radiogroup" aria-labelledby="scopeLabel">
+              <span id="scopeLabel" class="small" style="font-weight:800;color:#39414f">공개 범위</span>
+              <button type="button" role="radio" aria-checked="true" data-scope="neighbor">
+                <span class="lab">이웃 공개</span><span class="desc">이웃 12명 · 검색에 안 나옴</span>
+              </button>
+              <button type="button" role="radio" aria-checked="false" data-scope="public">
+                <span class="lab">전체 공개</span><span class="desc">판 방문자 누구나 · 검색에도 잡힘</span>
+              </button>
+              <button type="button" role="radio" aria-checked="false" data-scope="private">
+                <span class="lab">나만 보기</span><span class="desc">보관용 · 아무도 못 봄</span>
+              </button>
+            </div>
+            <p class="note" id="draftNote">초안은 이 브라우저에 자동 저장됩니다. 뒤로 가도 남아요.</p>
+            <div class="row" style="margin-top:10px">
+              <button type="button" class="btn link" id="btnBack">← 뒤로 가기 (초안 저장하고 나가기)</button>
+            </div>
+            <div class="box ok" id="backResult" hidden>
+              <b>초안을 저장하고 나왔습니다.</b>
+              <p class="small" style="margin:4px 0 0">제목·본문·공개 범위(<span id="backScope">이웃 공개</span>)를 함께 보관했어요. 다시 들어오면 ‘이어 쓰기’로 복원됩니다.</p>
+              <button type="button" class="btn" id="btnResume" style="margin-top:8px">이어 쓰기</button>
+            </div>
+          </section>
+
+          <!-- 올림 -->
+          <section id="scr-published" aria-labelledby="h-pub" hidden>
+            <h2 id="h-pub" tabindex="-1" style="font-size:15px">올렸습니다</h2>
+            <div class="box ok">
+              <dl class="kv">
+                <dt>고른 값</dt><dd id="chosenVal">이웃 공개</dd>
+                <dt>적용된 값</dt><dd id="appliedVal">이웃 공개</dd>
+                <dt>지금 볼 수 있는 사람</dt><dd id="audienceVal">이웃 12명</dd>
+              </dl>
+              <p class="small" style="margin:8px 0 0" id="searchNote">검색에는 나오지 않습니다.</p>
+            </div>
+
+            <div class="box">
+              <h3 style="margin-top:0;font-size:13.5px">이 글을 본 사람</h3>
+              <p class="small" style="margin:0 0 8px">
+                <b id="seenCount">0명</b>이 봤습니다. <span class="muted" id="seenWhen">아직 아무도 열지 않았어요.</span>
+              </p>
+              <div class="row">
+                <button type="button" class="btn" id="btnSimView">이웃 한 명이 봤다고 시뮬레이션</button>
+              </div>
+            </div>
+
+            <div class="box" id="scopeBox">
+              <h3 style="margin-top:0;font-size:13.5px">공개 범위 바꾸기</h3>
+              <div class="scopes" role="radiogroup" aria-label="바꿀 공개 범위" id="scopeChange">
+                <button type="button" role="radio" aria-checked="true" data-scope="neighbor"><span class="lab">이웃 공개</span><span class="desc">이웃 12명</span></button>
+                <button type="button" role="radio" aria-checked="false" data-scope="public"><span class="lab">전체 공개</span><span class="desc">누구나 · 검색 노출</span></button>
+                <button type="button" role="radio" aria-checked="false" data-scope="private"><span class="lab">나만 보기</span><span class="desc">아무도 못 봄</span></button>
+              </div>
+              <div class="box warn" id="undoNote" hidden>
+                <b id="undoTitle">좁혀도 되돌아오지 않는 것이 있습니다</b>
+                <ul class="small" style="margin:6px 0 0" id="undoList"></ul>
+                <label class="checkline" for="notifyChk">
+                  <input type="checkbox" id="notifyChk">
+                  <span>이미 본 이웃에게 ‘공개 범위를 바꿨다’고 알리기</span>
+                </label>
+              </div>
+              <div class="row" style="margin-top:8px">
+                <button type="button" class="btn" id="btnApplyScope" disabled>이 범위로 바꾸기</button>
+              </div>
+            </div>
+
+            <div class="row">
+              <button type="button" class="btn ghost" id="btnEdit">수정 화면 열기</button>
+              <button type="button" class="btn ghost" id="btnReset">처음부터</button>
+            </div>
+          </section>
+
+          <!-- 고침 -->
+          <section id="scr-edit" aria-labelledby="h-edit" hidden>
+            <h2 id="h-edit" tabindex="-1" style="font-size:15px">글 수정</h2>
+            <div class="field">
+              <label for="eTitle">제목</label>
+              <input id="eTitle" type="text" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="eBody">본문</label>
+              <textarea id="eBody"></textarea>
+            </div>
+            <div class="box">
+              <dl class="kv">
+                <dt>지금 적용 중</dt><dd id="editCurrent">이웃 공개 (이웃 12명)</dd>
+                <dt>이 화면의 값</dt><dd id="editFormScope">이웃 공개</dd>
+              </dl>
+              <p class="note">수정 화면은 늘 ‘이웃 공개’로 열립니다. 그대로 저장하면 범위가 조용히 바뀔 수 있어서, 저장 전에 멈춥니다.</p>
+            </div>
+            <div class="box stop" id="driftBox" hidden>
+              <b>저장하면 공개 범위가 바뀝니다</b>
+              <p class="small" style="margin:4px 0 8px" id="driftText"></p>
+              <div class="row">
+                <button type="button" class="btn" id="btnKeepScope">원래 범위 유지하고 저장</button>
+                <button type="button" class="btn" id="btnChangeScope">바뀐 범위로 저장</button>
+              </div>
+            </div>
+            <div class="row" style="margin-top:6px">
+              <button type="button" class="btn link" id="btnCancelEdit">← 수정 취소</button>
+            </div>
+          </section>
+
+          <div class="live" style="margin-top:12px">
+            <b>화면 낭독기가 읽는 문장</b><br>
+            <span id="announced">—</span>
+          </div>
+          <div id="liveRegion" aria-live="polite" class="tiny" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden"></div>
+        </div>
+        <div class="ph-foot">
+          <button type="button" class="btn primary" id="primary">이웃 12명에게 게시</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card pad">
+        <h2 style="display:flex;align-items:center;gap:8px">공개 범위 장부 <span class="pill n" id="revCount">1개 기록</span></h2>
+        <p class="small muted" style="margin:0 0 8px">게시·변경·수정으로 범위가 움직일 때마다 <code>scope_rev</code>가 하나씩 늘고, 그 시점에 <b>이미 본 사람 수</b>가 함께 남습니다. 나중에 “언제 누구에게 보였는지”를 되짚는 근거입니다.</p>
+        <table id="ledgerTable">
+          <thead>
+            <tr><th>rev</th><th>시각</th><th>범위</th><th>바꾼 곳</th><th>그때 본 사람</th></tr>
+          </thead>
+          <tbody id="ledgerBody">
+            <tr><td class="n">1</td><td class="n">—</td><td>이웃 공개 (초기값)</td><td>쓰기 화면</td><td class="n">0명</td></tr>
+          </tbody>
+        </table>
+        <p class="note" id="ledgerNote">아직 게시 전입니다. 게시하면 적용된 값과 시각이 첫 기록으로 남습니다.</p>
+      </div>
+
+      <div class="card pad" style="margin-top:14px">
+        <h2>이 화면에서 확인할 것</h2>
+        <ol class="steps" id="checkList">
+          <li>아무것도 열지 않고 <b>게시</b>를 누릅니다. 버튼에 ‘이웃 12명에게 게시’가 적혀 있고, 올린 뒤 고른 값과 적용된 값이 같습니다.</li>
+          <li>‘이웃 한 명이 봤다고 시뮬레이션’을 두 번 누른 뒤 <b>나만 보기</b>로 바꿉니다. 이미 본 2명과 스크랩·검색 캐시는 되돌아오지 않는다고 숫자로 말합니다.</li>
+          <li><b>수정 화면</b>을 열고 본문만 고친 뒤 저장합니다. 현재 범위는 ‘전체 공개’인데 수정 화면 기본값은 ‘이웃 공개’라, 저장 전에 멈추고 두 선택지를 줍니다.</li>
+          <li>장부에 rev가 쌓이는지 봅니다. 각 줄에 시각·이전→이후·바꾼 곳·그때 본 사람 수가 남습니다.</li>
+          <li>키보드만으로(탭·화살표·엔터) 같은 순서를 반복합니다. 맨 위 건너뛰기 링크부터 결과 제목으로 초점이 옮겨 갑니다.</li>
+        </ol>
+      </div>
+
+      <div class="card pad" style="margin-top:14px">
+        <h2>이 프로토타입이 하지 않는 것</h2>
+        <ul class="small" style="margin:0">
+          <li>실제 네이트 판에 붙어 있지 않습니다. 이웃·조회수·검색 캐시는 <b>시뮬레이션 값</b>입니다.</li>
+          <li>서버 저장을 흉내만 냅니다. 초안은 이 브라우저(localStorage)에만 남고, 다른 기기로 넘어가지 않습니다.</li>
+          <li>검색 반영 시간(최대 10분)은 정책 예시 값입니다. 실제 지연은 검색 인덱스 설계에 달려 있습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+  <div class="card pad">
+    <h2>포크 계보 — 무엇을 물려받고 무엇을 바꿨나</h2>
+    <p class="small muted">원작: <b>“쓰는 동안 보이는 공개 범위”</b>(regex-riot). 원작의 문제 분석과 ‘설정 화면을 늘리지 않는다’는 원칙은 그대로 씁니다. 계보는 공개돼 있고, 원작의 몫은 원작에 남습니다.</p>
+    <table class="cmp">
+      <tbody>
+        <tr><td class="h"><span class="tag keep">유지</span></td><td>공개 범위를 별도 설정 화면이 아니라 <b>쓰는 화면 안</b>에 계속 띄운다. 게시 버튼 문구가 고른 범위를 따라간다. 확인 창을 하나 더 얹지 않는다.</td></tr>
+        <tr><td class="h"><span class="tag keep">유지</span></td><td>뒤로 가도 제목·본문이 날아가지 않는다(초안 보존). 원작의 사용자 반응 ‘날아갈까 봐 그냥 눌렀다’에 대한 대응.</td></tr>
+        <tr><td class="h"><span class="tag add">추가</span></td><td><b>올린 뒤</b>: 고른 값과 적용된 값을 대조하고, 지금 누가 볼 수 있는지(이웃 12명·확정값)와 검색 반영 시간을 함께 보여 준다.</td></tr>
+        <tr><td class="h"><span class="tag add">추가</span></td><td><b>바꾼 뒤</b>: 이미 본 사람·스크랩·검색 캐시는 되돌아오지 않는다는 사실을, 그때까지 본 사람 수와 함께 문장으로 말한다. 알림 선택지도 이 자리에 둔다.</td></tr>
+        <tr><td class="h"><span class="tag add">추가</span></td><td><b>고칠 때</b>: 수정 화면 기본값이 현재 범위와 다르면 저장 전에 멈춘다(범위 표류 방지). 원작의 약점으로 지적된 ‘수정 화면에서 설정을 못 찾고 나옴’과 같은 자리를 다룬다.</td></tr>
+        <tr><td class="h"><span class="tag add">추가</span></td><td><b>장부</b>: 범위가 움직인 모든 순간을 <code>scope_rev</code>로 남긴다. 화면 표시와 서버 권한이 어긋날 때 되짚는 근거가 된다.</td></tr>
+        <tr><td class="h"><span class="tag del">버림</span></td><td>게시 직전 확인 창을 한 번 더 띄우는 방식. 원작의 1차 반응(“박스가 갑자기 뜨니까 당황했어요”)이 가리킨 대로 단계를 늘리지 않는다.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>포크 근거 (공개된 원작 평가·리뷰에서)</h3>
+    <ul class="small">
+      <li>“잘못 올렸다는 걸 알게 되는 순간은 게시 후인 경우가 많은데, 게시 후 범위 확인과 변경 흐름은 없어서 그 경우는 남아 있어요.” — 게시 후 구간을 추가한 직접 이유.</li>
+      <li>“첨부된 동작 데모는 공개 범위와 무관한 페이지였고, 구현 저장소로 걸린 곳도 이 기능과 관계없는…” — 이번 포크는 <b>이 페이지 자체가 데모</b>입니다. 위 ① 탭에서 직접 눌러 확인할 수 있습니다.</li>
+      <li>“뒤로 가면 글이 날아갈까 봐 그냥 눌렀어요.” — 초안 보존을 유지하고, 여기에 ‘범위까지 함께 보관’을 붙였습니다.</li>
+    </ul>
+    <p class="note">원작의 1차 리뷰 점수(사용자 35)와 2차(58~60) 사이의 차이도 참고했습니다. 반응을 받은 뒤 고친 판이 더 낫다는 기록이 남아 있어, 같은 실수를 반복하지 않도록 <b>관찰(문제) — 해결(화면) — 측정(장부)</b>을 한 줄로 맞췄습니다.</p>
+  </div>
+</section>
+
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+  <div class="card pad">
+    <h2>상태 모델 — 공개 범위를 ‘값’이 아니라 ‘이력’으로</h2>
+    <pre><code>post = {
+  id, author_id,
+  scope: 'neighbor' | 'public' | 'private',   // 지금 적용된 값
+  scope_rev: 3,                                // 범위가 바뀐 횟수(단조 증가)
+  audience_snapshot: { neighbor: 12, at: '…' },// 게시 시점에 확정한 대상 수
+  seen: { count: 2, last_at: '…' },            // 실제로 연 사람
+  scope_log: [
+    { rev: 1, at, from: null,      to: 'neighbor', by: 'compose',  seen_then: 0 },
+    { rev: 2, at, from: 'neighbor', to: 'public',  by: 'publish',  seen_then: 0 },
+    { rev: 3, at, from: 'public',   to: 'private', by: 'post:change', seen_then: 2 }
+  ]
+}</code></pre>
+    <h3>규칙</h3>
+    <ul class="small">
+      <li>화면 문구(띠·버튼·결과 카드)는 손으로 적지 않고 <code>POLICY[scope]</code> 한 곳에서 만듭니다. 정책이 바뀌면 세 자리가 함께 바뀝니다.</li>
+      <li>게시 요청은 <code>scope_rev</code>를 함께 보냅니다. 서버 값과 다르면 게시를 멈추고 재확인을 요구합니다(다른 기기에서 바뀐 경우).</li>
+      <li>수정 저장은 <b>현재 범위를 기본값으로</b> 두고, 폼 값이 다르면 저장 전에 확인을 받습니다. 조용한 변경을 만들지 않습니다.</li>
+      <li>범위를 좁혀도 <code>seen</code>과 <code>scope_log</code>는 지우지 않습니다. 지우면 “그때 누가 봤는지”를 영영 모릅니다.</li>
+    </ul>
+    <h3>이벤트 (배포하면 이렇게 잽니다)</h3>
+    <table>
+      <thead><tr><th>이벤트</th><th>무엇을 아는가</th></tr></thead>
+      <tbody>
+        <tr><td><code>compose_open</code></td><td>글쓰기 진입. 범위 띠가 처음부터 보였는지(첫 상호작용까지의 시간)를 잰다.</td></tr>
+        <tr><td><code>publish_submit</code></td><td>고른 값·적용 값·scope_rev·대상 수. ‘확인 없이 게시’ 비율의 분모.</td></tr>
+        <tr><td><code>scope_change</code></td><td>from·to·seen_then·알림 선택 여부. 게시 직후 N분 안의 변경 비율 = 첫 선택이 틀렸다는 신호.</td></tr>
+        <tr><td><code>edit_save_drift</code></td><td>수정 저장이 범위를 바꾸려다 멈춘 횟수. 사용자가 어느 쪽을 골랐는지.</td></tr>
+        <tr><td><code>ledger_open</code></td><td>장부를 실제로 여는 비율. 안 열리면 장부는 있어도 없는 것.</td></tr>
+      </tbody>
+    </table>
+    <h3>화면 상태 전이</h3>
+    <pre><code>쓰기 ──게시──▶ 올림(고른 값·적용 값 대조, 본 사람)
+  ▲                 │
+  │            ┌────┴─────┐
+  │        범위 바꾸기   수정 화면
+  │            │           │
+  │       되돌릴 수 없는 것 │  폼 값 ≠ 현재 값?
+  │        + 알림 선택     ├─ 아니오 → 그대로 저장
+  └──── 취소 ─────────────┴─ 예 → 멈춤(유지/변경 중 선택)
+                모든 변경 → scope_log에 rev 추가</code></pre>
+  </div>
+</section>
+
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+  <div class="card pad">
+    <h2>무엇이 확인되고, 무엇이 아직 아닌가</h2>
+    <h3>1) 이 페이지에서 실제로 확인되는 것</h3>
+    <ul class="small">
+      <li>게시 버튼 라벨과 띠 문구가 <code>POLICY</code>에서 생성되는 것 — 범위를 바꾸면 두 자리가 함께 바뀝니다.</li>
+      <li>게시 결과의 ‘고른 값 = 적용된 값’ 대조와 대상 수 표시.</li>
+      <li>이미 본 사람이 있을 때 범위를 좁히면, 되돌릴 수 없는 항목이 숫자와 함께 나오는 것.</li>
+      <li>수정 화면에서 폼 값과 현재 값이 다를 때 저장이 멈추고 두 선택지가 나오는 것.</li>
+      <li>모든 변경이 장부에 rev로 쌓이고, 새로고침 뒤에도 초안·범위가 남는 것(localStorage).</li>
+      <li>키보드만으로 전체 흐름 통과, 결과 화면으로 초점 이동, <code>aria-live</code>로 범위 변경 문장 읽힘.</li>
+    </ul>
+    <h3>2) 아직 아닌 것</h3>
+    <ul class="small">
+      <li><b>실제 사용자 반응이 아닙니다.</b> 이 페이지의 ‘봤다’는 내가 누른 시뮬레이션 값이고, 이웃 12명은 예시입니다.</li>
+      <li><b>오해 감소를 입증하지 못했습니다.</b> “범위를 잘못 골랐다”는 비율이 줄었는지는 배포 후 <code>scope_change</code> 지표로만 알 수 있습니다.</li>
+      <li><b>검색 캐시·스크랩 회수</b>는 화면 문장으로만 약속합니다. 실제 회수 정책은 검색·외부 공유 설계에 달려 있고, 이 프로토타입은 그것을 흉내내지 않습니다.</li>
+      <li><b>서버 권한 일치</b>는 설계(<code>scope_rev</code> 대조)일 뿐, 구현이 없습니다.</li>
+    </ul>
+    <h3>3) 배포하면 이렇게 검증하겠습니다</h3>
+    <table>
+      <thead><tr><th>가설</th><th>지표</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td>띠를 늘 보이면 ‘확인 없이 게시’가 줄어든다</td><td>첫 게시 중 범위를 한 번도 열지 않은 비율</td><td>기존 대비 30% 이상 감소</td></tr>
+        <tr><td>게시 후 대조가 첫 선택 오류를 잡는다</td><td>게시 10분 내 <code>scope_change</code> 비율</td><td>현재값 기준선 대비 변화 방향 확인(증가하면 첫 선택 오류가 드러난 것)</td></tr>
+        <tr><td>수정 표류 방지가 사고를 막는다</td><td><code>edit_save_drift</code> 발생·선택 분포</td><td>‘유지’ 선택이 다수면 기본값 설계를 다시 본다</td></tr>
+        <tr><td>장부가 실제로 쓰인다</td><td><code>ledger_open</code> 비율</td><td>5% 미만이면 장부는 운영자용으로만 남긴다</td></tr>
+      </tbody>
+    </table>
+    <h3>4) 접근성</h3>
+    <ul class="small">
+      <li>색만으로 구분하지 않습니다 — 범위는 라벨 문장과 버튼 글자로 구분되고, 위험 상태는 ‘검색에도 잡혀요’ 같은 문장을 함께 답니다.</li>
+      <li>범위 변경은 <code>aria-live="polite"</code>로 “공개 범위가 나만 보기로 바뀌었습니다. 이미 본 2명에게는 남습니다.”처럼 읽힙니다.</li>
+      <li>라디오 그룹은 <code>aria-checked</code>로 상태를 노출하고, 화면 전환 시 제목으로 초점을 옮깁니다.</li>
+      <li>움직임 줄이기(<code>prefers-reduced-motion</code>)를 존중합니다.</li>
+    </ul>
+    <h3>5) 남는 위험</h3>
+    <ul class="small">
+      <li>확인 단계를 늘리지 않는다는 원칙 때문에, <b>게시 후에야</b> 잘못을 아는 경우는 여전히 남습니다. 이 설계는 그 경우를 ‘빠르게 알아채고 되돌릴 수 있는 만큼 되돌리는’ 쪽으로 처리합니다.</li>
+      <li>이웃 수는 시점에 따라 달라집니다. 게시 시점 확정값과 화면 캐시가 다를 수 있어, 결과 카드에는 확정값을, 쓰는 중에는 ‘약’을 붙입니다.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+<footer class="page">
+  sun-pickle · 미션 pan · 원작 포크(regex-riot) · 글·자료 CC BY-SA 4.0, 코드 GPL-3.0 · 예시 인물·수치는 창작이며 실제 서비스 화면이 아닙니다. 개인정보 없음.
+</footer>
+<script src="script.js?v=17cb9358"></script>
+</body>
+</html>
