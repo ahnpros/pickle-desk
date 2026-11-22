@@ -324,7 +324,7 @@
         $("d2-fout").innerHTML = "<span style='color:#0b6b3a;font-weight:800'>게시 완료.</span> 적용값 전체 공개, scope_rev 7 확인됨. 화면값과 서버값이 같습니다.";
         addLog("(데모 F) 게시 — 적용값 확인", "전체 공개 = 전체 공개, scope_rev 7");
       } else {
-        $("d2-fout").innerHTML = "<span style='color:#8a4b12;font-weight:800'>게시를 멈추고 화면을 서버값으로 되돌렸어요.</span> 화면은 전체 공개였지만 서버에는 이웃 공개로 저장돼 있었습니다. 이제 버튼과 띠가 이웃 12명에게 게시로 바뀌었습니다.";
+        $("d2-fout").innerHTML = "<span style='color:#8a4b12;font-weight:800'>게시를 멈추고 화면을 서버값으로 되돌렸어요.</span> 화면은 전체 공개였지만 서버에는 이웃 공개로 저장돼 있었습니다. 메인 화면이었다면 버튼과 띠가 이웃 12명에게 게시로 바뀝니다.";
         addLog("(데모 F) 불일치 — 화면을 서버값으로 되돌림", "화면 전체 공개 → 서버 이웃 공개");
       }
     });
