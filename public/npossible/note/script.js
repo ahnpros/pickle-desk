@@ -234,4 +234,6 @@
       $("stale-toggle").textContent = stale ? "원래 상태로 되돌리기" : "원본 글이 비공개로 바뀐 상황 보기";
     });
   }
+
+  render();
 })();
