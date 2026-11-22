@@ -325,6 +325,10 @@
     var next = order[(order.indexOf(S.publishedScope) + 1) % 3];
     S.publishedScope = next;
     $("editCurrent").textContent = POLICY[next].label + " · " + POLICY[next].audience;
+    $("appliedVal").textContent = POLICY[next].label;
+    $("audienceVal").textContent = POLICY[next].audience;
+    $("searchNote").textContent = POLICY[next].search;
+    syncScopeButtons($("scopeChange"), next);
     renderBand();
     announce("다른 기기에서 공개 범위가 " + POLICY[next].label + "로 바뀌었습니다. 이 화면의 값은 " + POLICY[S.editScope].label + "입니다. 이대로 저장하면 덮어씁니다.");
   }
@@ -353,13 +357,11 @@
 
     var target = mode === "overwrite" ? mine : server;
     var changed = target !== server;
-    if (changed) {
-      S.publishedScope = target;
-      $("appliedVal").textContent = POLICY[target].label;
-      $("audienceVal").textContent = POLICY[target].audience;
-      $("searchNote").textContent = POLICY[target].search;
-      syncScopeButtons($("scopeChange"), target);
-    }
+    S.publishedScope = target;
+    $("appliedVal").textContent = POLICY[target].label;
+    $("audienceVal").textContent = POLICY[target].audience;
+    $("searchNote").textContent = POLICY[target].search;
+    syncScopeButtons($("scopeChange"), target);
     addLog("수정 저장", changed ? server : null, target);
     show("published");
     announce(changed

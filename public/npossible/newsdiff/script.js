@@ -113,14 +113,15 @@
   }
 
   function align(baseSents, newSents) {
-    var pairs = [], i, j;
+    var pairs = [], all = [], i, j;
     for (i = 0; i < baseSents.length; i++) {
       for (j = 0; j < newSents.length; j++) {
         var sim = dice(baseSents[i].t, newSents[j].t);
         if (sim >= MATCH_MIN) pairs.push({ i: i, j: j, sim: sim });
+        if (sim >= 0.3) all.push({ i: i, j: j, sim: sim });
       }
     }
-    var all = pairs.slice();
+    var all = [];
     pairs.sort(function (a, b) { return b.sim - a.sim; });
     var usedBase = {}, usedNew = {}, match = {};
     for (var k = 0; k < pairs.length; k++) {
@@ -199,11 +200,11 @@
       }
     }
 
-    /* 임계값 경계(0.35~0.65)에 걸린 짝을 그대로 보여 준다. */
+    /* 임계값 경계(0.35~0.72)에 걸린 짝을 그대로 보여 준다. */
     var edge = [];
     for (var e = 0; e < al.all.length; e++) {
       var p = al.all[e];
-      if (p.sim >= 0.35 && p.sim <= 0.65) {
+      if (p.sim >= 0.35 && p.sim <= 0.72) {
         edge.push({ baseText: base.sents[p.i].t, newText: neu.sents[p.j].t, sim: p.sim, matched: !!(al.match[p.j] && al.match[p.j].i === p.i) });
       }
     }
