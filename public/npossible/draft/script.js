@@ -265,8 +265,11 @@
     var rec = readJSON(KEY, null);
     var saved = rec ? rec.body.length : 0;
     var lost = Math.max(0, expect - saved);
-    $("d6-out").innerHTML = "<b>입력 직후 닫기 결과</b><br>쓴 글자 " + expect + "자 · 저장된 글자 " + saved +
-      "자 · 유실 " + lost + "자" + (lost === 0 ? " (닫히는 순간 저장이 동작함)" : " (닫히는 순간 저장이 못 따라감)");
+    var msg = "<b>입력 직후 닫기 결과</b><br>쓴 글자 " + expect + "자, 저장된 글자 " + saved +
+      "자, 유실 " + lost + "자" + (lost === 0 ? " (닫히는 순간 저장이 동작함)" : " (닫히는 순간 저장이 못 따라감)");
+    $("d6-out").innerHTML = msg;
+    var sb = $("statusBox");
+    if(sb) sb.innerHTML = '<div style="background:#eef4ff;border:1px solid #bcd4ff;border-radius:8px;padding:7px 9px;margin-bottom:6px">' + msg + "</div>" + sb.innerHTML;
     localStorage.removeItem(TEST_KEY);
   }
   if($("d6-instant")){
@@ -275,6 +278,8 @@
       if(!b.trim()) b = "가방을 주웠어요.";
       b += " 지금 막 쓴 문장입니다.";
       $("body").value = b;
+      dirty = true;
+      $("title").value = t || "닫기 시험";
       localStorage.setItem(TEST_KEY, String(b.length));
       location.reload();
     });
