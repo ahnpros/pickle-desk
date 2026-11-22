@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>쓰던 글 — 어디까지 저장됐는지 보이게 | sun-pickle</title>
+<meta name="description" content="판 글쓰기에서 자동 저장 상태와 마지막 저장 지점을 보여 주고, 새로고침 뒤 한 번에 이어 쓰는 동작 프로토타입.">
+<style>
+  :root{
+    --bg:#f6f7f8; --card:#fff; --ink:#15181d; --muted:#5c6471; --line:#e2e6ea;
+    --green:#03c75a; --green-d:#02944a; --green-soft:#e9f8f0;
+    --amber:#a2520b; --amber-soft:#fff5e8; --amber-line:#f0c48a;
+    --blue:#0b5cc4; --blue-soft:#eaf1fd;
+    --gray-soft:#eef1f5; --red:#b3261e; --red-soft:#fdeceb;
+    --focus:#1a4fd6; --shadow:0 1px 2px rgba(16,24,40,.06),0 10px 30px -18px rgba(16,24,40,.25);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.62 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1140px;margin:0 auto;padding:26px 18px 80px}
+  header.top{background:#fff;border-bottom:1px solid var(--line)}
+  .top-in{max-width:1140px;margin:0 auto;padding:18px 18px 12px}
+  .kicker{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  h1{font-size:25px;line-height:1.3;margin:6px 0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  nav.tabs{max-width:1140px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow:auto}
+  nav.tabs button{border:0;background:none;padding:13px 11px;font:inherit;font-weight:700;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;font-size:13.5px}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--green)}
+  nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:8px 8px 0 0}
+  section[role="tabpanel"][hidden]{display:none}
+  .grid{display:grid;grid-template-columns:400px 1fr;gap:26px;align-items:start;margin-top:22px}
+  @media (max-width:960px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  h2{font-size:17px;margin:0 0 10px;letter-spacing:-.01em}
+  h3{font-size:14px;margin:18px 0 6px}
+  p{margin:0 0 10px}
+  ul,ol{margin:0 0 10px;padding-left:20px}
+  li{margin:4px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:13.5px}
+  .tiny{font-size:12px}
+  code{background:#f1f3f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  pre{background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:12.5px;line-height:1.5}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:700;font-size:12.5px;color:#39414f}
+  .pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800}
+  .pill.g{background:var(--green-soft);color:#0b6b3a}
+  .pill.a{background:var(--amber-soft);color:var(--amber)}
+  .pill.b{background:var(--blue-soft);color:var(--blue)}
+  .pill.n{background:var(--gray-soft);color:#414a56}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 13px;font:inherit;font-weight:700;
+    font-size:13.5px;cursor:pointer;color:var(--ink)}
+  .btn:hover{border-color:#c8d0da}
+  .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.ghost{background:#fff}
+  .btn.sm{padding:5px 9px;font-size:12px;border-radius:8px}
+  .row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+  .skip{position:absolute;left:-9999px;top:0;background:#fff;padding:10px 14px;border:2px solid var(--focus);border-radius:0 0 8px 0;z-index:50}
+  .skip:focus{left:0}
+
+  /* 휴대폰 화면 */
+  .phone{width:400px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;
+    box-shadow:0 20px 50px -24px rgba(16,24,40,.35);display:flex;flex-direction:column;min-height:680px}
+  .ph-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:4}
+  .ph-head .bk{border:0;background:none;font-size:19px;cursor:pointer;padding:2px 6px;border-radius:8px;color:var(--ink)}
+  .ph-head .ttl{font-weight:800;font-size:15px;flex:1}
+  .ph-head .cnt{font-size:12px;color:var(--muted)}
+  .ph-body{padding:12px 14px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .field{border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;width:100%;background:#fff;color:var(--ink)}
+  .field:focus{outline:2px solid #bcd4ff;border-color:#9dc0f7}
+  textarea.field{min-height:250px;resize:vertical;line-height:1.7}
+  .savebar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+  .dot.wait{background:#d0d5dc}
+  .dot.busy{background:#e8b23a;animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .bar{height:5px;border-radius:3px;background:#eef1f5;flex:1;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--green);width:0%}
+  .restore{border:1px solid #bcd4ff;background:#f2f7ff;border-radius:12px;padding:11px 12px;font-size:13px}
+  .restore h4{margin:0 0 4px;font-size:13.5px;color:#12408f}
+  .restore .prev{background:#fff;border:1px dashed #c3d6f5;border-radius:8px;padding:6px 8px;margin:6px 0;font-size:12.5px;color:#39414f}
+  .mark{background:#fff3c4;border-radius:3px;padding:0 2px}
+  .hist{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .hist + .hist{margin-top:6px}
+  .note{font-size:12px;color:var(--muted)}
+  .warnbox{border:1px solid var(--amber-line);background:var(--amber-soft);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#6b3b06}
+  footer.meta{max-width:1140px;margin:26px auto 0;padding:0 18px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<a class="skip" href="#p1">본문으로 건너뛰기</a>
+<header class="top">
+  <div class="top-in">
+    <div class="kicker">sun-pickle · Npossible 새판 시즌0 · 미션 쓰던 글</div>
+    <h1>쓰던 글, 어디까지 저장됐는지 보이게</h1>
+    <p class="sub">저장은 조용히 하되, 돌아온 사람에게는 “살아 있다”를 먼저 보여 줍니다. 이 페이지는 정말로 새로고침해도 글이 남습니다.</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="출품 내용">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">① 체험 (글쓰기)</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 문제 근거</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 저장 규칙·엣지케이스</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 측정·한계</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 확인 장치</button>
+  </nav>
+</header>
+
+<div class="wrap">
+<!-- ============ 1. 체험 ============ -->
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+  <div class="grid">
+    <div class="phone" role="group" aria-label="판 글쓰기 화면 예시">
+      <div class="ph-head">
+        <button class="bk" id="btnBack" aria-label="뒤로">‹</button>
+        <span class="ttl">판 글쓰기</span>
+        <span class="cnt" id="headCount">0자</span>
+      </div>
+      <div class="ph-body">
+        <div id="restoreSlot"></div>
+        <input class="field" id="title" placeholder="제목" aria-label="제목">
+        <textarea class="field" id="body" placeholder="무슨 일이 있었나요?" aria-label="본문"></textarea>
+        <div class="savebar">
+          <span class="dot wait" id="saveDot" aria-hidden="true"></span>
+          <span id="saveText">아직 저장 전</span>
+          <span class="bar" aria-hidden="true"><i id="saveBar"></i></span>
+        </div>
+        <div class="row" style="margin:0">
+          <button class="btn sm" id="btnSample">예시 글 채우기</button>
+          <button class="btn sm" id="btnReload">화면 닫기(새로고침)</button>
+        </div>
+        <div class="note" id="belowNote">입력을 멈추면 1초 안에 이 기기에 저장됩니다. 서버로는 아무것도 보내지 않습니다.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card pad">
+        <h2>지금 상태</h2>
+        <div id="statusBox" class="small"></div>
+      </div>
+      <div class="card pad" style="margin-top:14px">
+        <h2>저장 기록</h2>
+        <p class="tiny muted" style="margin-top:-4px">같은 글의 이전 저장 지점입니다. 되돌리고 싶을 때 바로 그 자리에서 이어 씁니다.</p>
+        <div id="histBox"></div>
+      </div>
+      <div class="card pad" style="margin-top:14px">
+        <h2>보관과 삭제</h2>
+        <div class="row" style="margin-top:0">
+          <label class="small" for="retention">보관 기한</label>
+          <select id="retention" class="field" style="width:auto;padding:6px 8px;font-size:13px">
+            <option value="1">1일</option>
+            <option value="7" selected>7일</option>
+            <option value="30">30일</option>
+          </select>
+          <button class="btn sm" id="btnClear">이 기기의 초안 지우기</button>
+        </div>
+        <p class="note" style="margin-bottom:0">기한이 지난 초안은 열 때 바로 지웁니다. 지운 뒤에는 되돌릴 수 없고, 서버에 사본이 없으므로 복구 요청도 없습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. 문제 ============ -->
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>미션이 짚은 것과 화면의 답</h2>
+    <table>
+      <thead><tr><th style="width:34%">미션의 문장</th><th>화면에서의 답</th></tr></thead>
+      <tbody>
+        <tr><td>쓰다가 화면이 닫히거나 새로고침되면 글이 지워진다</td><td>입력이 멈추면 1초 안에 이 기기에 저장합니다. 화면을 닫아도 남습니다. 위 <b>화면 닫기(새로고침)</b>을 눌러 직접 확인할 수 있습니다.</td></tr>
+        <tr><td>저장은 쓰는 동안 조용히 일어나야 한다</td><td>저장할 때 팝업이나 창을 띄우지 않습니다. 상태 줄의 점과 문장만 바뀝니다.</td></tr>
+        <tr><td>돌아온 이용자에게는 글이 살아 있다는 걸 먼저 보여 줘야 한다</td><td>돌아오면 편집 화면 위에 <b>“쓰던 글이 있어요”</b>가 먼저 뜨고, 마지막 저장 시각·글자 수·마지막 문장이 함께 보입니다.</td></tr>
+        <tr><td>언제, 어디까지 저장됐는지가 보여야 믿을 수 있다</td><td>상태 줄에 시각과 글자 수를 쓰고, 저장된 부분과 아직 안 된 부분을 막대로 나눕니다. 초안을 불러오면 마지막 저장 지점을 문장으로 표시합니다.</td></tr>
+        <tr><td>복구는 한두 번 동작 안에 있어야 한다</td><td>돌아오면 <b>이어 쓰기</b> 한 번으로 원래 화면이 됩니다. 다른 선택은 “새로 쓰기” 하나뿐입니다.</td></tr>
+        <tr><td>보관 기한과 사생활</td><td>1일·7일·30일 중 고르고, 지난 초안은 열 때 지웁니다. 저장 위치는 이 브라우저 안이며 서버 전송이 없습니다.</td></tr>
+      </tbody>
+    </table>
+    <h3>왜 ‘저장했습니다’ 알림을 띄우지 않는가</h3>
+    <p class="small">쓸 때마다 알림이 뜨면 글이 방해받고, 사람은 곧 알림을 닫아 버립니다. 대신 <b>상태 줄</b>에 같은 정보를 계속 두고, <b>돌아왔을 때만</b> 큰 안내를 띄웁니다. 알림은 필요할 때 한 번, 나머지는 조용히.</p>
+    <div class="warnbox" style="margin-top:12px">
+      <b>한계.</b> 이 프로토타입은 이 브라우저의 저장소에만 씁니다. 다른 기기에서 이어 쓰기, 서버 장애 복구, 브라우저 저장소를 지운 경우는 다루지 않습니다. 그 셋은 아직 확인하지 못했습니다.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. 규칙 ============ -->
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>저장 규칙</h2>
+    <pre>[입력] → 1초 동안 입력 없음 → 저장
+       제목이나 본문이 비어 있으면 저장하지 않음
+[저장] 시각, 제목, 본문, 마지막 30자, 기한을 함께 기록
+       기록은 20초 이상 차이날 때만 남김 (최근 3개 유지)
+[열기] 초안 있음 → 배너 먼저 ("쓰던 글이 있어요")
+       ├─ 이어 쓰기 → 편집 화면 + 마지막 저장 지점 표시
+       ├─ 새로 쓰기 → 빈 화면 (초안은 기록에 남김)
+       └─ 기한 지남 → 지우고 "보관 기한이 지나 지웠어요" 한 줄
+[삭제] 이용자가 직접 지우면 즉시 삭제, 되돌리기 없음</pre>
+    <h3>저장 상태 문장</h3>
+    <table>
+      <thead><tr><th style="width:26%">상태</th><th>화면 문장</th></tr></thead>
+      <tbody>
+        <tr><td>입력 중, 아직 저장 전</td><td>“저장 중…” (노란 점)</td></tr>
+        <tr><td>저장됨</td><td>“저장됨 · 12:04:33 · 본문 412자” (초록 점)</td></tr>
+        <tr><td>저장 실패</td><td>“저장하지 못했어요. 이 화면을 닫으면 글이 사라집니다.” (빨간 문장, 닫기 전 확인)</td></tr>
+        <tr><td>기한 지난 초안</td><td>“보관 기한이 지나 지웠어요.” (삭제 시각 표시)</td></tr>
+      </tbody>
+    </table>
+    <h3>엣지케이스</h3>
+    <table>
+      <thead><tr><th style="width:30%">상황</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>제목만 쓰고 본문은 비어 있음</td><td>초안으로 저장합니다. 복구 문구는 “제목만 저장됐어요 · 본문은 아직 없습니다”.</td></tr>
+        <tr><td>같은 글을 두 탭에서 엶</td><td>나중에 저장한 쪽이 남고, 다른 탭에는 “다른 창에서 이어 썼어요” 한 줄과 [불러오기]를 띄웁니다(이 프로토타입에서는 문구만 있고 동작은 확인하지 못했습니다).</td></tr>
+        <tr><td>저장 공간이 부족함</td><td>저장 실패 문장을 띄우고, 오래된 기록부터 지우겠다고 알린 뒤 한 번 더 시도합니다.</td></tr>
+        <tr><td>이용자가 초안을 지움</td><td>즉시 지우고 “지웠어요. 되돌릴 수 없어요”를 보여 줍니다. 서버 사본이 없으므로 복구 요청을 받지 않습니다.</td></tr>
+        <tr><td>화면 낭독기</td><td>저장 문장은 조용히 바뀌므로 <code>aria-live=polite</code>로 읽되, 30초에 한 번만 읽습니다(반복 낭독 방지).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 4. 측정 ============ -->
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>이 페이지에서 실제로 잰 값</h2>
+    <div id="measureBox" class="small"></div>
+    <h3>배포 뒤에 재야 할 것</h3>
+    <ul class="small">
+      <li>복구 성공률: 초안이 있던 사람 중 실제로 이어 쓴 비율.</li>
+      <li>복구까지 걸린 동작 수: 배너 → 이어 쓰기까지 누른 횟수(이 화면은 1회).</li>
+      <li>저장 실패율과 실패 뒤 이탈률.</li>
+      <li>초안 보관 기한을 실제로 얼마나 쓰는지. 7일은 제가 정한 값이고 근거 자료가 없습니다.</li>
+    </ul>
+    <h3>아직 모르는 것</h3>
+    <ul class="small">
+      <li>사람이 이 화면을 실제로 써 본 결과가 아닙니다. 제가 새로고침해 확인한 것까지입니다.</li>
+      <li>모바일 브라우저가 백그라운드에서 저장소를 지우는 비율은 모릅니다.</li>
+      <li>서버 저장과 비교한 비용은 다루지 않았습니다. 이 안은 서버를 쓰지 않습니다.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 5. 확인 장치 ============ -->
+<section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>직접 해 보는 순서</h2>
+    <table>
+      <thead><tr><th style="width:30%">확인하려는 것</th><th>하는 방법</th></tr></thead>
+      <tbody>
+        <tr><td>정말 저장되는가</td><td><b>① 체험</b>에서 글을 조금 쓰고 1초 기다립니다. 상태 줄이 “저장됨 · 시각 · 글자 수”로 바뀝니다.</td></tr>
+        <tr><td>새로고침해도 남는가</td><td><b>화면 닫기(새로고침)</b>을 누릅니다. 페이지가 실제로 다시 열리고, 맨 위에 초록/파란 배너 “쓰던 글이 있어요”가 뜹니다.</td></tr>
+        <tr><td>복구가 한 번에 되는가</td><td><b>이어 쓰기</b>를 누릅니다. 제목·본문이 그대로 돌아오고 마지막 저장 문장이 표시됩니다.</td></tr>
+        <tr><td>언제 저장됐는지 보이는가</td><td>상태 줄의 시각과 글자 수, 그리고 오른쪽 <b>저장 기록</b>의 목록을 봅니다.</td></tr>
+        <tr><td>보관 기한이 지키는가</td><td>기한을 1일로 바꾸고, 브라우저 저장소를 훑어보지 않고도 “지금 지우기”로 즉시 삭제되는 것을 확인합니다.</td></tr>
+      </tbody>
+    </table>
+    <p class="tiny muted" style="margin-top:12px">※ 사람을 모아 검증한 결과가 아닙니다. 새로고침과 복구는 이 브라우저에서 실제로 일어납니다.</p>
+  </div>
+</section>
+</div>
+<footer class="meta">예시 글은 지어낸 내용입니다. 개인정보는 넣지 않았습니다. 이 페이지는 이 브라우저 안에서만 동작합니다. 저작물 CC BY-SA 4.0, 코드 GPL-3.0.</footer>
+<script src="script.js?v=baf846ee"></script>
+</body>
+</html>
