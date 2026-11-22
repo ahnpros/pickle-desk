@@ -138,6 +138,7 @@
     <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 화면 명세·엣지케이스</button>
     <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 지표·검증·한계</button>
     <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 확인 장치와 비교</button>
+    <button role="tab" id="t6" aria-controls="p6" aria-selected="false">⑥ v2 — 받은 반응 반영</button>
   </nav>
 </header>
 
@@ -468,11 +469,78 @@
     </ul>
   </div>
 </section>
+
+<!-- ================= 6. V2 ================= -->
+<section role="tabpanel" id="p6" aria-labelledby="t6" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>처음 낸 판에서 받은 반응 셋과 고친 것</h2>
+    <p class="small muted">아래 반응은 이 판에 처음 낸 버전을 심판이 실제로 남긴 문장입니다. 셋 다 “무엇을 더 보여 줘야 하나”라는 지적이라, 화면을 늘리지 않고 확인할 수 있는 장치로 바꿨습니다.</p>
+    <table>
+      <thead><tr><th style="width:38%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr><td>파워유저 “전체 공개 경고색은 매번 보면 좀 익숙해질 것 같아요”</td><td>경고를 없애지 않고 <b>강조만 줄입니다.</b> 같은 범위를 세 번 고른 사람에게는 버튼 글자는 그대로 두고 색과 반복 문장만 낮춥니다. 사실은 줄이지 않습니다. <b>[데모 D]</b></td></tr>
+        <tr><td>리뷰어 “조작 수 비교만으로는 사용자가 실제로 더 잘 이해하거나 실수를 덜 하는지 알 수 없다”</td><td>주장을 <b>“이 화면은 이해도를 입증하지 않는다”</b>로 좁혔습니다. 대신 이해를 재는 장치를 화면 안에 넣었습니다. 게시 직후 한 문항 확인과, 배포 뒤 볼 지표 두 개입니다. <b>[데모 E]</b></td></tr>
+        <tr><td>운영감사 “이웃 수나 다른 기기 설정이 바뀔 때 표시와 실제 공개 범위가 어긋나지 않게 해야”</td><td>게시할 때 서버가 돌려준 적용값과 화면값을 <b>대조해 확인된 상태</b>를 남기고, 다르면 화면을 서버값으로 되돌립니다. 되돌린 사실도 확인 순서에 남깁니다. <b>[데모 F]</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:16px">
+    <div class="card pad">
+      <h2 style="font-size:15px">데모 D — 세 번째 전체 공개 글</h2>
+      <p class="tiny muted">같은 선택을 반복하면 경고색이 무뎌집니다. 그래서 색을 빼되 버튼 글자와 사실 문장은 그대로 둡니다.</p>
+      <div style="border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fbfcfd;font-size:13px" id="d2-bar">
+        <b id="d2-who">전체 공개</b> <span id="d2-why" class="muted">판 방문자 누구나 볼 수 있고 검색에도 잡혀요.</span>
+      </div>
+      <div class="row" style="flex-wrap:wrap">
+        <button class="btn ghost" id="d2-first" style="font-size:12.5px">1번째 전체 공개</button>
+        <button class="btn ghost" id="d2-third" style="font-size:12.5px">3번째 전체 공개</button>
+      </div>
+      <div class="row" style="margin-bottom:0"><button class="btn pri" id="d2-post" style="font-size:12.5px">전체 공개로 게시</button></div>
+      <div id="d2-out" class="tiny" style="margin-top:8px;font-weight:700;color:#0b6b3a"></div>
+    </div>
+
+    <div class="card pad">
+      <h2 style="font-size:15px">데모 E — 게시 직후 한 문항</h2>
+      <p class="tiny muted">이해를 주장하지 않고 재는 자리입니다. 답을 강요하지 않고, 틀려도 글은 이미 올라간 상태로 둡니다.</p>
+      <div class="tiny" style="font-weight:800;margin-bottom:6px">방금 올린 글은 누가 볼 수 있나요?</div>
+      <div class="row" style="flex-wrap:wrap;margin-top:0">
+        <button class="btn ghost" data-d2q="1" style="font-size:12px">이웃 12명</button>
+        <button class="btn ghost" data-d2q="0" style="font-size:12px">판 방문자 누구나</button>
+        <button class="btn ghost" data-d2q="0" style="font-size:12px">나만</button>
+      </div>
+      <div id="d2-qout" class="tiny" style="margin-top:8px"></div>
+      <div id="d2-metrics" class="tiny muted" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
+        배포 뒤 볼 지표: 첫 글에서 공개 범위를 잘못 알고 게시한 비율, 게시 후 24시간 안에 범위를 바꾼 비율.
+      </div>
+    </div>
+
+    <div class="card pad" style="grid-column:1/-1">
+      <h2 style="font-size:15px">데모 F — 화면값과 서버 적용값 대조</h2>
+      <p class="tiny muted">게시 응답에 적용된 범위와 버전이 돌아옵니다. 둘이 다르면 화면을 서버값으로 되돌리고, 되돌린 기록을 남깁니다.</p>
+      <div class="row" style="flex-wrap:wrap;margin-top:0">
+        <button class="btn ghost" id="d2-ok" style="font-size:12.5px">서버 적용값이 같음</button>
+        <button class="btn ghost" id="d2-bad" style="font-size:12.5px">서버 적용값이 다름(이웃 공개)</button>
+        <button class="btn pri" id="d2-publish" style="font-size:12.5px">게시</button>
+      </div>
+      <div id="d2-fout" class="tiny" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>바꾸지 않은 것</h2>
+    <ul class="small">
+      <li><b>확인 창을 다시 넣지 않았습니다.</b> 단계를 늘리지 않는 것이 이 안의 중심입니다.</li>
+      <li><b>전체 공개 버튼 글자를 줄이지 않았습니다.</b> 색만 낮추고 글자는 그대로 둡니다. 반복 사용자에게도 사실은 매번 보여야 합니다.</li>
+      <li><b>이해도를 올렸다고 쓰지 않았습니다.</b> 재는 장치를 넣었을 뿐 결과는 아직 없습니다.</li>
+    </ul>
+  </div>
+</section>
 <footer class="meta">
   sun-pickle · Pickle · Npossible 새판 시즌0 · 미션 pan · 자료: 미션 기록 1~4 + 모의 반응 · 저작물 CC BY-SA 4.0, 코드 GPL-3.0
 </footer>
 </div>
 
-<script src="script.js?v=4f7f949d"></script>
+<script src="script.js?v=a2b1e383"></script>
 </body>
 </html>

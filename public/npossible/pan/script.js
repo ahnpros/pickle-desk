@@ -272,7 +272,65 @@
     });
   }
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"]];
+
+  // ---------- v2 데모 D/E/F ----------
+  var d2 = { third:false, serverScope:"public", answered:false };
+  if($("d2-first")){
+    $("d2-first").addEventListener("click", function(){
+      d2.third = false;
+      $("d2-bar").style.background = "var(--warn-soft)";
+      $("d2-bar").style.borderColor = "var(--warn-line)";
+      $("d2-who").style.color = "var(--warn)";
+      $("d2-why").textContent = "판 방문자 누구나 볼 수 있고 검색에도 잡혀요.";
+      addLog("(데모 D) 1번째 전체 공개", "경고색과 경고 문장 모두 표시");
+      $("d2-out").textContent = "";
+    });
+    $("d2-third").addEventListener("click", function(){
+      d2.third = true;
+      $("d2-bar").style.background = "#f7f8fa";
+      $("d2-bar").style.borderColor = "var(--line)";
+      $("d2-who").style.color = "var(--ink)";
+      $("d2-why").textContent = "판 방문자 누구나 볼 수 있고 검색에도 잡혀요. 세 번째 선택이라 색만 낮췄어요.";
+      addLog("(데모 D) 3번째 전체 공개", "색과 반복 경고만 낮춤, 버튼 글자는 그대로");
+      $("d2-out").textContent = "";
+    });
+    $("d2-post").addEventListener("click", function(){
+      $("d2-out").textContent = "게시했어요. 적용 범위는 전체 공개입니다. 게시 버튼 글자는 " +
+        (d2.third ? "세 번째에도 '전체 공개로 게시' 그대로였어요." : "'전체 공개로 게시'였어요.");
+      addLog("(데모 D) 전체 공개로 게시", d2.third ? "3번째, 색만 낮춘 상태" : "1번째, 경고색 상태");
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-d2q]"), function(b){
+      b.addEventListener("click", function(){
+        var ok = b.getAttribute("data-d2q") === "1";
+        d2.answered = true;
+        $("d2-qout").innerHTML = ok
+          ? "<span style='color:#0b6b3a;font-weight:800'>맞아요.</span> 방금 올린 글은 전체 공개라 이웃 12명이 아니라 판 방문자 누구나 볼 수 있어요. 이 응답은 이 브라우저에만 남습니다."
+          : "<span style='color:#8a4b12;font-weight:800'>아니에요.</span> 전체 공개로 올렸기 때문에 판 방문자 누구나 볼 수 있어요. 이 응답은 이 브라우저에만 남습니다.";
+        addLog("(데모 E) 게시 후 이해 확인", ok ? "정답" : "오답");
+      });
+    });
+    $("d2-ok").addEventListener("click", function(){
+      d2.serverScope = "public";
+      $("d2-fout").textContent = "서버 적용값을 전체 공개로 맞춰 뒀어요. 이제 게시를 눌러 보세요.";
+      $("d2-fout").style.color = "var(--muted)";
+    });
+    $("d2-bad").addEventListener("click", function(){
+      d2.serverScope = "neighbor";
+      $("d2-fout").textContent = "서버에는 이웃 공개로 저장돼 있어요. 이 화면은 전체 공개를 보여 주는 상태입니다.";
+      $("d2-fout").style.color = "var(--warn)";
+    });
+    $("d2-publish").addEventListener("click", function(){
+      if(d2.serverScope === "public"){
+        $("d2-fout").innerHTML = "<span style='color:#0b6b3a;font-weight:800'>게시 완료.</span> 적용값 전체 공개, scope_rev 7 확인됨. 화면값과 서버값이 같습니다.";
+        addLog("(데모 F) 게시 — 적용값 확인", "전체 공개 = 전체 공개, scope_rev 7");
+      } else {
+        $("d2-fout").innerHTML = "<span style='color:#8a4b12;font-weight:800'>게시를 멈추고 화면을 서버값으로 되돌렸어요.</span> 화면은 전체 공개였지만 서버에는 이웃 공개로 저장돼 있었습니다. 이제 버튼과 띠가 이웃 12명에게 게시로 바뀌었습니다.";
+        addLog("(데모 F) 불일치 — 화면을 서버값으로 되돌림", "화면 전체 공개 → 서버 이웃 공개");
+      }
+    });
+  }
+
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"]];
   function selectTab(id){
     tabs.forEach(function(pair){
       var on = pair[0]===id;
