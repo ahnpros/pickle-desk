@@ -43,6 +43,19 @@
     return Math.max(0, (NOW - d)/86400000);
   }
 
+  function stripParticle(t){
+    var suffs = ["였어","이었어","인데","이고","라고","라는","이에요","예요","에서","에게","한테","으로","로서","부터","까지","보다","처럼","이나","하고","은","는","이","가","을","를","의","에","도","와","과","만","랑","나","로"];
+    for(var k=0;k<2;k++){
+      var done = true;
+      for(var i=0;i<suffs.length;i++){
+        var sf = suffs[i];
+        if(t.length - sf.length >= 2 && t.slice(-sf.length) === sf){ t = t.slice(0, -sf.length); done = false; break; }
+      }
+      if(done) break;
+    }
+    return t;
+  }
+
   function extractFragments(q){
     var raw = norm(q).split(" ").filter(Boolean);
     var frags = [], seen = {};
@@ -58,15 +71,16 @@
         seen[c]=1; frags.push(c);
       });
       // 2글자 이상 토큰은 앞부분 명사 후보도
-      if(t.length>=4 && !stop[t]){
-        var head = t.slice(0, Math.min(3, t.length));
-        if(!seen[head]){ seen[head]=1; frags.push(head); }
-      }
     });
-    return frags.slice(0,12);
+    // 더 긴 조각에 포함되는 짧은 조각은 버린다
+    frags = frags.filter(function(f){
+      return !frags.some(function(g){ return g !== f && g.length > f.length && g.indexOf(f) >= 0; });
+    });
+    return frags.slice(0,10);
   }
 
   var FIELD = {title:3.0, tags:2.0, body:1.0};
+  var FIELD_LABEL = {title:"제목", tags:"태그", body:"본문"};
 
   function fragScore(doc, frag){
     var f = norm(frag);
@@ -189,14 +203,16 @@
     var top = hits.slice(0,6);
     box.innerHTML = top.map(function(h, i){
       var d = h.doc, pct = Math.round(Math.min(1, h.score) * 100);
-      var why = h.m.details.slice(0,4).map(function(x){ return x.frag + " (" + x.how + ")"; }).join(" · ");
+      var topScore = hits[0].score || 1;
+      var rel = Math.round(h.score / topScore * 100);
+      var why = h.m.details.slice(0,4).map(function(x){ return x.frag + " (" + (FIELD_LABEL[x.field]||"") + " " + x.how + ")"; }).join(" · ");
       return '<div class="item">'+
         '<div class="top"><span class="pill '+(d.src==="뉴스"?"p":d.src==="판"?"g":"n")+'">'+d.src+'</span>'+
         '<span>'+d.date+'</span><span>·</span><span>'+(d.who==="기사"?"기사·보도":"사람이 쓴 글")+'</span>'+
-        '<span style="margin-left:auto">일치 '+pct+'%</span></div>'+
+        '<span style="margin-left:auto" title="이 검색 안에서 1위 결과 대비 상대 점수">상대 적합도 '+rel+'%</span></div>'+
         '<h3>'+highlight(d.title, frags)+'</h3>'+
         '<div class="snip">'+highlight(d.body, frags)+'</div>'+
-        '<div class="scorebar"><i style="width:'+pct+'%"></i></div>'+
+        '<div class="scorebar"><i style="width:'+Math.max(4,rel)+'%"></i></div>'+
         '<div class="whybox"><b>왜 이 결과인지</b> — '+escapeHtml(why || "시간 근접도만 반영")+
         (i===0?' · <b>최상위</b>':'')+'</div>'+
         '</div>';

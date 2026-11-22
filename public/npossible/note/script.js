@@ -83,10 +83,10 @@
     list.innerHTML = NOTES.map(function(n){
       var open = !!saved[n.id];
       var html = '<div class="note '+(open?"open":"")+'" id="note-'+n.id+'">';
-      html += '<button class="note-h" aria-expanded="'+open+'" aria-controls="body-'+n.id+'">';
+      html += '<button class="note-h" aria-expanded="'+open+'" aria-controls="body-'+n.id+'" aria-label="'+n.from+', '+n.time+', 왜 왔는지: '+n.why.text+'">';
       html += '<span class="av" aria-hidden="true">'+n.initial+'</span>';
       html += '<span style="flex:1">';
-      html += '<span class="nm">'+n.from+' <span class="pill '+n.rel.tone+'">'+(n.first?"첫 쪽지":"")+'</span></span>';
+      html += '<span class="nm">'+n.from+(n.first?' <span class="pill '+n.rel.tone+'">첫 쪽지</span>':'')+'</span>';
       html += '<span class="tm">'+n.time+'</span>';
       html += '<span class="pv">'+n.preview+'</span>';
       html += '<span class="why '+n.why.tone+'">'+whyMark(n.why.tone)+n.why.text+'</span>';
@@ -104,7 +104,7 @@
       html += '<div class="evid"><b>관계 근거</b> — '+n.rel.label+'<br><span class="muted">숫자는 이 쪽지함에서 실제로 셀 수 있는 값만 씁니다. 점수·등급은 만들지 않아요.</span></div>';
       html += '<div class="acts">';
       html += '<button class="btn pri" data-act="reply" data-id="'+n.id+'">답장</button>';
-      if(n.first) html += '<button class="btn" data-act="neighbor" data-id="'+n.id+'">이웃 맺기</button>';
+      if(n.first && !n.risky) html += '<button class="btn" data-act="neighbor" data-id="'+n.id+'">이웃 맺기</button>';
       html += '<button class="btn" data-act="why" data-id="'+n.id+'">왜 왔는지 더 보기</button>';
       html += '<button class="btn danger" data-act="block" data-id="'+n.id+'">차단</button>';
       html += '<button class="btn danger" data-act="report" data-id="'+n.id+'">신고</button>';
