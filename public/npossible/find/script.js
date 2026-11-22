@@ -96,12 +96,28 @@
   var FIELD = {title:3.0, tags:2.0, body:1.0};
   var FIELD_LABEL = {title:"제목", tags:"태그", body:"본문"};
 
+  var SYN = [["갈아타","갈아탄","대환","전환"],["한산","한적","조용"],["적정","적당","알맞"],["영하","마이너스"],["등산","산행"],["독감","인플루엔자"]];
+  function synonyms(f){
+    var out = [];
+    SYN.forEach(function(g){
+      if(g.some(function(x){ return f.indexOf(x)>=0 || x.indexOf(f)>=0; })){ out = out.concat(g); }
+    });
+    return out;
+  }
+
   function fragScore(doc, frag){
     var f = norm(frag);
     if(!f) return {score:0, hit:null, how:""};
     var t = norm(doc.title), g = norm(doc.tags).replace(/ /g,""), b = norm(doc.body);
     var best = {score:0, hit:null, how:""};
+    var forms = [f].concat(synonyms(f).filter(function(x){ return x !== f; }));
     [["title",t,FIELD.title],["tags",g,FIELD.tags],["body",b,FIELD.body]].forEach(function(x){
+      forms.forEach(function(form){
+        if(best.score >= x[2]) return;
+        if(x[1].indexOf(form) >= 0 && form !== f){
+          best = {score: x[2]*0.8, hit: x[0], how: "동의어 ‘"+form+"’"};
+        }
+      });
       var field = x[0], text = x[1], w = x[2];
       if(text.indexOf(f)>=0){
         if(w > best.score){ best = {score:w, hit:field, how:"정확히 일치"}; }
@@ -327,7 +343,8 @@
       '</div>';
     function title(id){ var d=DOCS.filter(function(x){return x.id===id;})[0]; return d ? d.title : "—"; }
     function cell(ok, id){
-      return '<td style="color:'+(ok?"#0b6b3a":"#b3261e")+'">'+(ok?"적중":"실패 — ")+escapeHtml(title(id))+'</td>';
+      var txt = ok ? "적중" : (id === undefined ? "결과 0건" : "실패 — " + escapeHtml(title(id)));
+      return '<td style="color:'+(ok?"#0b6b3a":"#b3261e")+'">'+txt+'</td>';
     }
     $("benchTable").innerHTML = '<table><thead><tr><th>질의</th><th>정답 문서</th><th>키워드(느슨) 1위</th><th>키워드(엄격) 1위</th><th>조각 검색 1위</th></tr></thead><tbody>'+
       rows.map(function(r){
