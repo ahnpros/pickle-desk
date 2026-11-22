@@ -109,11 +109,15 @@
       html += '<button class="btn danger" data-act="block" data-id="'+n.id+'">차단</button>';
       html += '<button class="btn danger" data-act="report" data-id="'+n.id+'">신고</button>';
       html += '</div>';
+      html += '<div class="tiny muted" style="margin-top:8px">‘신고’를 누르면 이 발신자 차단도 함께 적용돼요. 30초 안에 되돌릴 수 있고, 신고 화면에서 차단을 끌 수 있어요.</div>';
       html += '<div class="report" id="rep-'+n.id+'" hidden><div class="tiny" style="font-weight:800">신고 이유를 하나 골라 주세요</div><div class="rr">';
       ["광고·홍보","모르는 사람의 반복 발송","욕설·괴롭힘","사칭·사기 의심"].forEach(function(r){
         html += '<button class="btn sm" data-reason="'+r+'" data-id="'+n.id+'">'+r+'</button>';
       });
-      html += '</div><div class="tiny muted" style="margin-top:6px">신고는 접수만 되고, 제재는 별도 심사로 정해져요. 신고하면 이 발신자의 쪽지는 다시 받지 않습니다.</div></div>';
+      html += '</div>'+
+        '<label class="tiny" style="display:flex;gap:7px;align-items:center;margin-top:9px;font-weight:700">'+
+        '<input type="checkbox" id="withblock-'+n.id+'" checked> 차단도 함께 하기 (끄면 신고만 접수돼요)</label>'+
+        '<div class="tiny muted" style="margin-top:6px">신고는 접수만 되고, 제재는 별도 심사로 정해져요.</div></div>';
       html += '</div></div>';
       return html;
     }).join("");
@@ -166,8 +170,14 @@
         var id = b.getAttribute("data-id"), reason = b.getAttribute("data-reason");
         var n = NOTES.filter(function(x){return x.id===id;})[0];
         document.getElementById("rep-"+id).hidden = true;
-        addLog("신고 접수 — "+n.from, "이유: "+reason+" · 차단 동시 적용");
-        toast("신고를 접수했어요 ("+reason+"). 이 발신자의 쪽지는 다시 받지 않습니다.", function(){ addLog("신고·차단 취소", "되돌리기"); toast("되돌렸어요"); });
+        var cb = document.getElementById("withblock-"+id);
+        var withBlock = cb ? cb.checked : true;
+        addLog("신고 접수 — "+n.from, "이유: "+reason+" · 차단 " + (withBlock ? "동시 적용" : "안 함"));
+        toast("신고를 접수했어요 ("+reason+")." + (withBlock ? " 이 발신자의 쪽지는 다시 받지 않습니다." : " 차단은 하지 않았어요."),
+          function(){
+            addLog("신고 취소" + (withBlock ? " · 차단도 함께 해제" : ""), "되돌리기");
+            toast("되돌렸어요" + (withBlock ? " — 차단도 함께 풀었어요" : ""));
+          });
       });
     });
   }
@@ -183,7 +193,7 @@
     }
   });
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"]];
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"]];
   function selectTab(id){
     tabs.forEach(function(p){
       var on = p[0]===id;
@@ -202,5 +212,27 @@
     });
   });
 
-  render();
-})();
+  if($("stale-toggle")){
+    var stale = false;
+    $("stale-toggle").addEventListener("click", function(){
+      stale = !stale;
+      if(stale){
+        $("stale-step").textContent = "서연 님의 글 · 비공개로 바뀜";
+        $("stale-desc").textContent = "내가 볼 수 없는 글이에요. 제목·내용은 표시하지 않습니다.";
+        $("stale-why").textContent = "내 판 댓글에 답장 · 3일 전 (원본 일부 확인 불가)";
+        $("stale-why").style.color = "#5c6470";
+        $("stale-note").innerHTML = "경로 원본이 비공개가 되면 <b>제목·본문을 지우고</b> ‘경로 원본이 바뀜’으로 내립니다. 경로 전체를 지우지는 않아요(내 댓글 사실은 남음).";
+        addLog("(데모) 원본 글 비공개 전환", "경로 원본 → ‘경로 원본이 바뀜’");
+      } else {
+        $("stale-step").textContent = "서연 님의 글";
+        $("stale-desc").textContent = "같은 글에 답글 “아침 7시가 한산해요”";
+        $("stale-why").textContent = "내 판 댓글에 답장 · 3일 전";
+        $("stale-why").style.color = "#0b6b3a";
+        $("stale-note").textContent = "";
+        addLog("(데모) 원본 글 다시 공개", "경로 복원");
+      }
+      $("stale-toggle").textContent = stale ? "원래 상태로 되돌리기" : "원본 글이 비공개로 바뀐 상황 보기";
+    });
+  }
+
+  

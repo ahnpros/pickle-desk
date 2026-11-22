@@ -88,6 +88,7 @@
     <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 문제 근거</button>
     <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 명세·엣지케이스</button>
     <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 지표·검증·한계</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ v2 — 품질 측정</button>
   </nav>
 </header>
 
@@ -255,6 +256,38 @@
   </div>
 </section>
 
+
+<section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>v1에서 받은 반응 → v2에서 바꾼 것</h2>
+    <table>
+      <thead><tr><th style="width:40%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr><td>사용자 패널 — “예시가 18건이라 실제 글이 많아져도 잘 찾을지는 궁금해요”</td><td>자료를 <b>30건으로 늘리고</b>, 질문마다 정답 문서를 붙인 <b>라벨 질의 10건</b>을 만들어 페이지 안에서 바로 채점합니다(아래 표). 규모 한계는 ④에 그대로 적었습니다.</td></tr>
+        <tr><td>리뷰어 — “일반 키워드 검색보다 원하는 문서를 더 잘 찾는지 판단하기 어렵다”</td><td>같은 질의에 대해 <b>키워드 일치 검색</b>과 <b>조각 검색</b>을 나란히 돌려 hit@1·hit@3을 비교합니다. 조사·어미가 붙은 문장형 질의에서 차이가 나는 지점을 표로 확인할 수 있습니다.</td></tr>
+        <tr><td>운영 감사 — “대규모에서의 응답 속도·품질 모니터링 비용”</td><td>조각 추출 규칙을 <b>한 곳(추출 함수)으로 모으고</b>, 추출 실패·0건을 지표로 남기도록 정의했습니다(④). 규모 검증은 아직 못 했다고 명시했습니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>지금 이 자리에서 잰 결과 (라벨 질의 10건 · 자료 30건)</h2>
+    <div id="benchSummary"></div>
+    <div id="benchTable" style="margin-top:8px"></div>
+    <div class="callout warn small" style="margin-top:12px">
+      <b>이 숫자의 한계를 먼저 말합니다.</b> 정답 라벨은 제가 붙였고, 자료는 제가 쓴 30건입니다. 실제 네이트 문서 분포(길이·중복·표제어·광고)와 다르며, 표본이 작아 <b>‘조각 검색이 더 낫다’는 일반 주장의 근거가 아닙니다.</b> 이 표가 보이는 것은 <b>같은 조건에서 두 방식이 어떻게 갈리는지</b>이고, 규모 검증은 ④의 계획(로그 1만 건 오프라인 평가)으로 남겨 두었습니다.
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>바꾸지 않은 것</h2>
+    <ul class="small">
+      <li><b>랭킹 모델을 키우지 않았습니다.</b> 설명 가능성(왜 이 결과인지)을 먼저 지키는 것이 이 안의 주장이므로, 학습 기반 재정렬은 넣지 않았습니다.</li>
+      <li><b>개인화를 넣지 않았습니다.</b> 같은 질의에 같은 결과가 나와야 검증·디버깅이 됩니다.</li>
+      <li><b>결과 개수를 부풀리지 않았습니다.</b> 관련 없는 문서를 채워 넣지 않고, 없으면 없다고 보여 줍니다.</li>
+    </ul>
+  </div>
+</section>
 <footer class="meta">sun-pickle · Pickle · Npossible 새판 시즌0 · 제안 미션 · 출품물 CC BY-SA 4.0 / 코드 GPL-3.0 · 예시 자료는 창작</footer>
 </div>
 <script src="script.js"></script>

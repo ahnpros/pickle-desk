@@ -21,7 +21,19 @@
     {id:15, date:"2026-10-30", src:"뉴스", who:"기사", title:"세탁기 10년 쓰면 전기요금 얼마나 늘까", body:"노후 가전의 대기전력과 효율 저하를 측정했다. 같은 사용량에도 요금 차이가 18% 났다.", tags:"세탁기 전기요금 가전"},
     {id:16, date:"2026-08-14", src:"검색기록", who:"사람", title:"내 검색어 — 수삼 세척 보관", body:"6년근 세척 수삼 냉동 보관 방법, 믹서 갈아 마시기.", tags:"수삼 보관 믹서 건강"},
     {id:17, date:"2026-11-12", src:"판", who:"사람", title:"아파트 관리비 겨울에 얼마나 오르나요", body:"난방비가 대부분이라 관리비 고지서 보고 놀랐습니다. 다른 단지도 비슷한가요?", tags:"아파트 관리비 난방 겨울"},
-    {id:18, date:"2026-11-22", src:"뉴스", who:"기사", title:"전세 사기 예방, 계약 전 확인 서류 3가지", body:"등기부등본과 국세·지방세 완납증명, 보증보험 가입 가능 여부를 확인해야 한다. 최근 피해 사례를 정리했다.", tags:"전세 사기 계약 서류 보증"}
+    {id:18, date:"2026-11-22", src:"뉴스", who:"기사", title:"전세 사기 예방, 계약 전 확인 서류 3가지", body:"등기부등본과 국세·지방세 완납증명, 보증보험 가입 가능 여부를 확인해야 한다. 최근 피해 사례를 정리했다.", tags:"전세 사기 계약 서류 보증"},
+    {id:19, date:"2026-11-19", src:"뉴스", who:"기사", title:"전세보증금 반환 지연, 임차인 권리 어떻게", body:"계약 만료 후 보증금을 돌려받지 못한 사례가 늘고 있다. 내용증명과 임차권등기명령 절차를 정리했다.", tags:"전세 보증금 반환 임차인"},
+    {id:20, date:"2026-10-12", src:"판", who:"사람", title:"겨울 등산 준비물 뭐 챙기세요?", body:"방한 장갑과 아이젠은 필수인 것 같아요. 물은 보온병에 넣어 가면 좋습니다.", tags:"등산 겨울 준비물"},
+    {id:21, date:"2026-03-05", src:"뉴스", who:"기사", title:"금리 인하 신호에 대출 수요 다시 늘어", body:"시장금리가 내리면서 주택담보대출 문의가 늘었다. 은행들은 우대금리 조건을 조정하고 있다.", tags:"금리 대출 수요 주택담보"},
+    {id:22, date:"2026-11-21", src:"뉴스", who:"기사", title:"서울시 버스 노선 개편, 12월부터 적용", body:"간선·지선 노선 18개가 조정된다. 출퇴근 시간대 배차 간격도 함께 바뀐다.", tags:"버스 노선 서울 개편"},
+    {id:23, date:"2026-07-08", src:"판", who:"사람", title:"아이 독감 걸렸을 때 학교 며칠 쉬나요", body:"해열제 먹이고 48시간 지나면 보내도 된다고 들었는데, 학교마다 기준이 다르더라고요.", tags:"독감 학교 아이 등교"},
+    {id:24, date:"2026-11-02", src:"검색기록", who:"사람", title:"내 검색어 — 겨울 난방비 절약", body:"난방비 절약 방법, 보일러 온도 적정선, 창문 단열 필름.", tags:"난방비 겨울 절약 보일러"},
+    {id:25, date:"2026-11-06", src:"뉴스", who:"기사", title:"전기히터 화재 주의보, 소비전력 먼저 확인", body:"겨울철 전기히터 사용이 늘면서 화재 신고가 증가했다. 문어발식 콘센트 사용을 피해야 한다.", tags:"전기히터 화재 소비전력 겨울"},
+    {id:26, date:"2026-11-15", src:"쪽지", who:"사람", title:"도윤 님과의 쪽지 — 주말 등산", body:"이번 주말에 관악산 가실래요? 2시간 코스로 잡으면 초보도 괜찮아요.", tags:"등산 주말 코스 관악산"},
+    {id:27, date:"2025-11-30", src:"뉴스", who:"기사", title:"작년 겨울 한파, 12월 초에 절정", body:"12월 첫 주에 영하 10도까지 떨어졌던 기록이 있다. 올해도 비슷한 흐름이 예상된다.", tags:"한파 겨울 기록 영하"},
+    {id:28, date:"2026-09-19", src:"판", who:"사람", title:"중고 세탁기 팔아요 (10년 사용)", body:"작동은 잘 되는데 소음이 좀 있습니다. 직접 가져가실 분만 연락 주세요.", tags:"중고 세탁기 판매"},
+    {id:29, date:"2026-11-13", src:"뉴스", who:"기사", title:"반도체 설비 투자 회복 조짐", body:"장비 발주가 늘면서 내년 설비 투자 전망이 상향됐다. 소재·부품 업종도 함께 움직인다.", tags:"반도체 설비 투자"},
+    {id:30, date:"2026-08-20", src:"검색기록", who:"사람", title:"내 검색어 — 자동차보험 갱신", body:"자동차보험 갱신 할인, 마일리지 특약 조건.", tags:"자동차보험 갱신 할인"}
   ];
 
   var NOW = new Date("2026-11-22T14:00:00+09:00");
@@ -227,6 +239,77 @@
   function logLine(s){
     logs.unshift(new Date().toTimeString().slice(0,8) + "  " + s);
     $("log").textContent = logs.slice(0,12).join("\n");
+  }
+
+
+  // ---------- v2: 품질 측정 (라벨된 질의 10건) ----------
+  var GOLD = [
+    {q:"겨울에 본 기사인데 전세 대출 금리가 3%대였어", id:1},
+    {q:"아이 학교 독감 결석 얘기 봤는데", id:8},
+    {q:"작년에 전세 갈아탄 사람 후기", id:13},
+    {q:"전기요금 두 배 차이 난다는 글", id:4},
+    {q:"주말에 등산 코스 추천해 주는 글", id:11},
+    {q:"서울 버스 노선 바뀐다던 기사", id:22},
+    {q:"세탁기 오래 쓰면 전기요금 얼마나 늘어", id:15},
+    {q:"헬스장 아침에 한산하다던 쪽지", id:6},
+    {q:"한파 영하 3도 기사", id:3},
+    {q:"반도체 수출 늘었다는 뉴스", id:12}
+  ];
+
+  function keywordEngine(q){
+    var toks = norm(q).split(" ").filter(function(t){ return t.length>=2; });
+    var scored = DOCS.map(function(doc){
+      var t = norm(doc.title), g = norm(doc.tags), b = norm(doc.body), sc = 0, hits = 0;
+      toks.forEach(function(tok){
+        if(t.indexOf(tok)>=0){ sc += FIELD.title; hits++; }
+        else if(g.indexOf(tok.replace(/ /g,""))>=0){ sc += FIELD.tags; hits++; }
+        else if(b.indexOf(tok)>=0){ sc += FIELD.body; hits++; }
+      });
+      return {doc:doc, sc:hits ? sc : 0};
+    }).filter(function(x){ return x.sc>0; });
+    scored.sort(function(a,b){ return b.sc-a.sc; });
+    return scored.map(function(x){ return x.doc.id; });
+  }
+
+  function fragmentEngine(q){
+    var frags = extractFragments(q);
+    var scored = DOCS.map(function(doc){
+      var m = match(doc, frags);
+      return {doc:doc, sc: m.norm};
+    }).filter(function(x){ return x.sc>0; });
+    scored.sort(function(a,b){ return b.sc-a.sc; });
+    return scored.map(function(x){ return x.doc.id; });
+  }
+
+  if($("bench")){
+    var rows = GOLD.map(function(g){
+      var k = keywordEngine(g.q), f = fragmentEngine(g.q);
+      return {
+        q:g.q,
+        gold:g.id,
+        k1:k[0], k3:k.slice(0,3).indexOf(g.id)>=0, f1:f[0], f3:f.slice(0,3).indexOf(g.id)>=0,
+        khit: k[0]===g.id, fhit: f[0]===g.id
+      };
+    });
+    var k1 = rows.filter(function(r){return r.khit;}).length;
+    var k3 = rows.filter(function(r){return r.k3;}).length;
+    var f1 = rows.filter(function(r){return r.fhit;}).length;
+    var f3 = rows.filter(function(r){return r.f3;}).length;
+    var n = rows.length;
+    $("benchSummary").innerHTML =
+      '<div class="kpi">'+
+      '<div><b>조각 검색 hit@1</b><span>'+f1+'/'+n+'</span></div>'+
+      '<div><b>조각 검색 hit@3</b><span>'+f3+'/'+n+'</span></div>'+
+      '<div><b>키워드 검색 hit@1</b><span>'+k1+'/'+n+'</span></div>'+
+      '<div><b>키워드 검색 hit@3</b><span>'+k3+'/'+n+'</span></div>'+
+      '</div>';
+    function title(id){ var d=DOCS.filter(function(x){return x.id===id;})[0]; return d ? d.title : "—"; }
+    $("benchTable").innerHTML = '<table><thead><tr><th>질의</th><th>정답 문서</th><th>키워드 1위</th><th>조각 1위</th></tr></thead><tbody>'+
+      rows.map(function(r){
+        return '<tr><td>'+escapeHtml(r.q)+'</td><td>'+escapeHtml(title(r.gold))+'</td>'+
+          '<td style="color:'+(r.khit?"#0b6b3a":"#b3261e")+'">'+(r.khit?"적중":"실패 — ")+escapeHtml(title(r.k1))+'</td>'+
+          '<td style="color:'+(r.fhit?"#0b6b3a":"#b3261e")+'">'+(r.fhit?"적중":"실패 — ")+escapeHtml(title(r.f1))+'</td></tr>';
+      }).join('')+'</tbody></table>';
   }
 
   // init
