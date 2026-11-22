@@ -291,7 +291,7 @@
       setState("saved", readJSON(KEY, null) || {savedClock:nowClock(), chars:$("body").value.length});
       $("d6-out").textContent = "저장 상태로 돌아왔어요.";
     });
-    showTestResult();
+    setTimeout(showTestResult, 0);
   }
 
   var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"]];
