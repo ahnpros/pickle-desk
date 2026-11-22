@@ -121,7 +121,6 @@
         if (sim >= 0.3) all.push({ i: i, j: j, sim: sim });
       }
     }
-    var all = [];
     pairs.sort(function (a, b) { return b.sim - a.sim; });
     var usedBase = {}, usedNew = {}, match = {};
     for (var k = 0; k < pairs.length; k++) {
