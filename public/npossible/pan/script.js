@@ -93,7 +93,7 @@
       '<div class="recon">'+
         '<div><span>내가 고른 값</span><b>'+p.label+'</b></div>'+
         '<div><span>실제 적용된 값</span><b>'+p.label+' ✓</b></div>'+
-        '<div><span>검색 노출</span><b>'+(p.searchable?"노출됨":"안 됨")+'</b></div>'+
+        '<div><span>검색 노출</span><b>'+(p.searchable?"노출됨 · 반영까지 최대 10분":"안 됨")+'</b></div>'+
       '</div>'+
       '<p class="tiny muted">'+p.why+'</p>'+
       '<div class="row"><button class="btn ghost" id="btnFix" style="flex:1">지금 바꾸기</button>'+
