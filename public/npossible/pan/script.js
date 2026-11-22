@@ -183,7 +183,7 @@
     state = {scope:"neighbor", touched:false, log:[], screen:"compose", announced:null, draftSaved:false};
     $("phTitle").textContent="판 글쓰기";
     $("title").value="동네 헬스장 3개월 다닌 후기";
-    $("body").value="처음엔 기구 이름도 몰라서 한참 서성였어요. 지금은 아침 7시에 가면 사람이 적어서 좋더라고요. 혹시 자곡동 근처에 같이 다니실 분 있으면 댓글 주세요.";
+    $("body").value="처음엔 기구 이름도 몰라서 한참 서성였어요. 지금은 아침 7시에 가면 사람이 적어서 좋더라고요. 혹시 문정동 근처에 같이 다니실 분 있으면 댓글 주세요.";
     var r = document.querySelector(".result"); if(r) r.remove();
     document.querySelector(".compose").style.display="block";
     $("sheet").classList.remove("open"); $("sheet").inert = true;
