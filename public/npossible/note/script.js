@@ -102,14 +102,15 @@
       });
       html += '</ul>';
       html += '<div class="evid"><b>관계 근거</b> — '+n.rel.label+'<br><span class="muted">숫자는 이 쪽지함에서 실제로 셀 수 있는 값만 씁니다. 점수·등급은 만들지 않아요.</span></div>';
+      html += '<div class="tiny" style="margin:10px 0 2px;font-weight:800;color:#8a4b12">신고를 누르면 이 발신자 차단도 함께 적용됩니다. 30초 안에 되돌릴 수 있어요.</div>';
       html += '<div class="acts">';
       html += '<button class="btn pri" data-act="reply" data-id="'+n.id+'">답장</button>';
       if(n.first && !n.risky) html += '<button class="btn" data-act="neighbor" data-id="'+n.id+'">이웃 맺기</button>';
       html += '<button class="btn" data-act="why" data-id="'+n.id+'">왜 왔는지 더 보기</button>';
       html += '<button class="btn danger" data-act="block" data-id="'+n.id+'">차단</button>';
-      html += '<button class="btn danger" data-act="report" data-id="'+n.id+'">신고</button>';
+      html += '<button class="btn danger" data-act="report" data-id="'+n.id+'">신고 (차단 함께)</button>';
       html += '</div>';
-      html += '<div class="tiny muted" style="margin-top:8px">‘신고’를 누르면 이 발신자 차단도 함께 적용돼요. 30초 안에 되돌릴 수 있고, 신고 화면에서 차단을 끌 수 있어요.</div>';
+      html += '<div class="tiny muted" style="margin-top:8px">신고 화면에서 차단을 끌 수 있어요. 끄면 신고만 접수됩니다.</div>';
       html += '<div class="report" id="rep-'+n.id+'" hidden><div class="tiny" style="font-weight:800">신고 이유를 하나 골라 주세요</div><div class="rr">';
       ["광고·홍보","모르는 사람의 반복 발송","욕설·괴롭힘","사칭·사기 의심"].forEach(function(r){
         html += '<button class="btn sm" data-reason="'+r+'" data-id="'+n.id+'">'+r+'</button>';
@@ -193,7 +194,7 @@
     }
   });
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"]];
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"]];
   function selectTab(id){
     tabs.forEach(function(p){
       var on = p[0]===id;

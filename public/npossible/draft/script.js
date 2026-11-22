@@ -7,7 +7,8 @@
   var RET = "sunpickle.npossible.draft.retention";
   var IDLE_MS = 1000;
   var idTimed = null, lastHistAt = 0, lastSaveAt = 0, saveCount = 0, lastLatency = null;
-  var pendingSnap = null;
+  var dirty = false, lastReason = "";
+  var TEST_KEY = "sunpickle.npossible.draft.expect";
 
   function nowClock(){
     var d = new Date();
@@ -31,12 +32,14 @@
     [KEY, HIST, META].forEach(function(k){ localStorage.removeItem(k); });
   }
 
-  function save(){
+  function save(reason){
+    lastReason = reason || lastReason || "입력 멈춤";
     var t = $("title").value, b = $("body").value;
     if(!t.trim() && !b.trim()){
       setState("empty");
       return;
     }
+    dirty = false;
     var started = Date.now();
     var rec = { title:t, body:b, savedAt:Date.now(), savedClock:nowClock(), chars:b.length, titleChars:t.length };
     try{
@@ -72,7 +75,7 @@
     }
     if(kind === "saved"){
       dot.className = "dot";
-      text.textContent = "저장됨 · " + rec.savedClock + " · 본문 " + rec.chars + "자";
+      text.textContent = "저장됨 · " + rec.savedClock + " · 본문 " + rec.chars + "자" + (lastReason ? " (" + lastReason + ")" : "");
       bar.style.width = "100%";
       bar.style.background = "var(--green)";
       return;
@@ -90,9 +93,10 @@
   }
 
   function scheduleSave(){
+    dirty = true;
     setState("busy");
     if(idTimed) clearTimeout(idTimed);
-    idTimed = setTimeout(function(){ save(); }, IDLE_MS);
+    idTimed = setTimeout(function(){ save("입력 멈춤"); }, IDLE_MS);
     renderStatus();
   }
 
@@ -203,10 +207,17 @@
   // ---------- 이벤트 ----------
   $("title").addEventListener("input", scheduleSave);
   $("body").addEventListener("input", scheduleSave);
-  $("title").addEventListener("blur", function(){ if(idTimed) clearTimeout(idTimed); save(); });
-  $("body").addEventListener("blur", function(){ if(idTimed) clearTimeout(idTimed); save(); });
+  $("title").addEventListener("blur", function(){ if(idTimed) clearTimeout(idTimed); save("입력창 벗어남"); });
+  $("body").addEventListener("blur", function(){ if(idTimed) clearTimeout(idTimed); save("입력창 벗어남"); });
+
+  // 입력이 이어지는 동안에도 2초마다 저장
+  setInterval(function(){ if(dirty) save("주기 저장"); }, 2000);
+  // 화면이 닫히거나 가려지는 순간 한 번 더
+  window.addEventListener("pagehide", function(){ if(dirty) save("화면 닫힘"); });
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "hidden" && dirty) save("화면 가려짐"); });
 
   $("btnSample").addEventListener("click", function(){
+    dirty = true;
     $("title").value = "아침에 지하철에서 가방을 주웠어요";
     $("body").value = "어제 저녁 7시쯤 3호선에서 어떤 분이 가방을 두고 내리셨어요. 바로 역무원한테 맡겼고, 연락처는 역무원에게만 알려 드렸어요. 가방 주인은 오늘 오후에 찾으러 온다고 하네요. 다음부터는 물건을 잘 챙겨야겠어요.";
     setState("busy");
@@ -246,7 +257,39 @@
     if(e.key === KEY){ renderStatus(); renderRestore(); }
   });
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"]];
+
+  // ---------- v2 시험 ----------
+  function showTestResult(){
+    var expect = Number(localStorage.getItem(TEST_KEY) || "0");
+    if(!expect) return;
+    var rec = readJSON(KEY, null);
+    var saved = rec ? rec.body.length : 0;
+    var lost = Math.max(0, expect - saved);
+    $("d6-out").innerHTML = "<b>입력 직후 닫기 결과</b><br>쓴 글자 " + expect + "자 · 저장된 글자 " + saved +
+      "자 · 유실 " + lost + "자" + (lost === 0 ? " (닫히는 순간 저장이 동작함)" : " (닫히는 순간 저장이 못 따라감)");
+    localStorage.removeItem(TEST_KEY);
+  }
+  if($("d6-instant")){
+    $("d6-instant").addEventListener("click", function(){
+      var t = $("title").value, b = $("body").value;
+      if(!b.trim()) b = "가방을 주웠어요.";
+      b += " 지금 막 쓴 문장입니다.";
+      $("body").value = b;
+      localStorage.setItem(TEST_KEY, String(b.length));
+      location.reload();
+    });
+    $("d6-fail").addEventListener("click", function(){
+      setState("fail");
+      $("d6-out").innerHTML = "<span style='color:#8f1f18;font-weight:700'>저장 실패 상태를 띄웠어요.</span> 이 상태에서는 화면을 닫지 말라고 알립니다. 실제 저장소를 막은 것은 아니고 문장만 보여 줍니다.";
+    });
+    $("d6-recover").addEventListener("click", function(){
+      setState("saved", readJSON(KEY, null) || {savedClock:nowClock(), chars:$("body").value.length});
+      $("d6-out").textContent = "저장 상태로 돌아왔어요.";
+    });
+    showTestResult();
+  }
+
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"]];
   function selectTab(id){
     tabs.forEach(function(pair){
       var on = pair[0] === id;

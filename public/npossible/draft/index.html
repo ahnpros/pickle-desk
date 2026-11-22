@@ -106,6 +106,7 @@
     <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 저장 규칙·엣지케이스</button>
     <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 측정·한계</button>
     <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 확인 장치</button>
+    <button role="tab" id="t6" aria-controls="p6" aria-selected="false">⑥ v2 — 받은 반응 반영</button>
   </nav>
 </header>
 
@@ -259,6 +260,53 @@
       </tbody>
     </table>
     <p class="tiny muted" style="margin-top:12px">※ 사람을 모아 검증한 결과가 아닙니다. 새로고침과 복구는 이 브라우저에서 실제로 일어납니다.</p>
+  </div>
+</section>
+
+<!-- ============ 6. V2 ============ -->
+<section role="tabpanel" id="p6" aria-labelledby="t6" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>처음 낸 화면에서 받은 반응과 고친 것</h2>
+    <table>
+      <thead><tr><th style="width:38%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr><td>파워유저와 리뷰어 “입력을 1초 쉬어야 저장되니 계속 쓰다 창이 닫히면 마지막 부분이 날아갈 수 있고, 1초마다 저장과 1초 멈춘 뒤 저장은 다르다”</td><td>입력이 이어지는 동안에도 <b>2초마다 저장</b>하고, 화면이 닫히거나 가려지는 순간 <b>한 번 더 저장</b>합니다. 상태 줄에 저장 이유를 함께 적습니다. <b>[아래 시험 버튼]</b></td></tr>
+        <tr><td>일반 사용자 “다른 기기에서는 초안을 못 불러오는 점이 아쉽다”</td><td>이번 버전에는 넣지 못했습니다. 서버 저장이 필요하고, 그 경우 사생활 설명과 보관 기한을 다시 설계해야 합니다. 대신 <b>무엇을 저장하고 얼마나 두는지</b>를 아래에 적었습니다. 한 기기 안에서만 되는 한계는 그대로 밝힙니다.</td></tr>
+        <tr><td>운영감사 “저장 공간이 부족하거나 브라우저 데이터가 삭제되면 복구할 수 없으니 실패와 한계를 명확히 안내해야”</td><td>저장 실패 문장을 따로 두고, 복구할 수 없는 세 경우를 화면에 적었습니다. <b>[아래 시험 버튼]</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>입력 직후 닫기 시험</h2>
+    <p class="small muted">글자를 더한 뒤 기다리지 않고 바로 새로고침합니다. 돌아온 뒤 저장된 글자와 쓴 글자를 비교해 유실량을 보여 줍니다.</p>
+    <div class="row" style="margin-top:0">
+      <button class="btn pri" id="d6-instant">한 문장 쓰고 바로 닫기</button>
+      <button class="btn ghost" id="d6-fail">저장 실패 화면 보기</button>
+      <button class="btn ghost" id="d6-recover">저장 실패 풀기</button>
+    </div>
+    <div id="d6-out" class="small" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>다른 기기에서 이어 쓰기 (아직 없음)</h2>
+    <table>
+      <thead><tr><th style="width:26%">항목</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>필요한 것</td><td>계정 로그인과 서버 저장. 이 화면은 서버가 없어서 같은 기기 안에서만 됩니다.</td></tr>
+        <tr><td>저장하면 생기는 문제</td><td>글 내용이 서버에 남습니다. 지금은 기기 밖으로 나가지 않습니다. 서버로 옮기면 보관 기한과 삭제 요청, 유출 시 책임을 다시 정해야 합니다.</td></tr>
+        <tr><td>이번에 한 것</td><td>같은 브라우저의 다른 탭에서 고친 경우는 저장 값이 바뀌면 알림 줄을 띄우도록 했습니다. 다만 탭 사이 동작은 직접 확인하지 못했습니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>복구할 수 없는 경우</h2>
+    <ul class="small">
+      <li>브라우저 저장 공간이 가득 찼을 때. 저장 실패 문장을 띄우고 화면을 닫지 말라고 알립니다.</li>
+      <li>브라우저 데이터를 지웠을 때. 사본이 없어 복구할 수 없습니다.</li>
+      <li>시크릿 창이나 기기를 바꿨을 때. 그 창을 닫으면 사라집니다.</li>
+    </ul>
   </div>
 </section>
 </div>

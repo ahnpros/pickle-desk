@@ -5,13 +5,15 @@
   // ---------- 예시 글 버전 (지어낸 글, 개인정보 아님) ----------
   var VERSIONS = [
     { v:1, time:"11:02", who:"처음 올림",
-      text:"어제 저녁 7시쯤 3호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는대, 제 번호 010-2345-6789를 적어 두라고 했어요. 가방 주인은 오늘 오후에 찾으러 온다고 하네요. 다음부터는 물건을 잘 챙겨야겠어요." },
+      text:"어제 저녁 7시쯤 3호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는대, 제 번호 010-2345-6789를 적어 두라고 했어요. 가방 주인은 오늘 오후에 찾으러 온다고 하네요. 역무원실에서는 오후 6시 전에 찾는 것이 허용돼요. 다음부터는 물건을 잘 챙겨야겠어요." },
     { v:2, time:"11:31", who:"맞춤법",
-      text:"어제 저녁 7시쯤 3호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는데, 제 번호 010-2345-6789를 적어 두라고 했어요. 가방 주인은 오늘 오후에 찾으러 온다고 하네요. 다음부터는 물건을 잘 챙겨야겠어요." },
+      text:"어제 저녁 7시쯤 3호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는데, 제 번호 010-2345-6789를 적어 두라고 했어요. 가방 주인은 오늘 오후에 찾으러 온다고 하네요. 역무원실에서는 오후 6시 전에 찾는 것이 허용돼요. 다음부터는 물건을 잘 챙겨야겠어요." },
     { v:3, time:"12:04", who:"연락처 정리",
-      text:"어제 저녁 7시쯤 3호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는데, 연락처는 역무원에게만 알려 드렸어요. 가방 주인은 오늘 오후에 찾으러 온다고 하네요. 다음부터는 물건을 잘 챙겨야겠어요." },
+      text:"어제 저녁 7시쯤 3호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는데, 연락처는 역무원에게만 알려 드렸어요. 가방 주인은 오늘 오후에 찾으러 온다고 하네요. 역무원실에서는 오후 6시 전에 찾는 것이 허용돼요. 다음부터는 물건을 잘 챙겨야겠어요." },
     { v:4, time:"12:40", who:"내용 정정",
-      text:"어제 저녁 7시쯤 2호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는데, 연락처는 역무원에게만 알려 드렸어요. 가방 주인은 내일 오후에 찾으러 온다고 하네요. 다음부터는 물건을 잘 챙겨야겠어요." }
+      text:"어제 저녁 7시쯤 2호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는데, 연락처는 역무원에게만 알려 드렸어요. 가방 주인은 내일 오후에 찾으러 온다고 하네요. 역무원실에서는 오후 6시 전에 찾는 것이 허용돼요. 다음부터는 물건을 잘 챙겨야겠어요." },
+    { v:5, time:"13:12", who:"찾는 시간 정정",
+      text:"어제 저녁 7시쯤 2호선에서 한 아저씨가 가방을 두고 내리셨어요. 바로 역무원한테 맡겼는데, 연락처는 역무원에게만 알려 드렸어요. 가방 주인은 내일 오후에 찾으러 온다고 하네요. 역무원실에서는 오후 6시 전에 찾는 것이 금지돼요. 다음부터는 물건을 잘 챙겨야겠어요." }
   ];
 
   var COMMENTS = [
@@ -25,6 +27,10 @@
   var PHONE = /(0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4})/;
   var EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
   var ACCOUNT = /\d{2,6}-\d{2,6}-\d{2,6}/;
+  var RRN = /\d{6}[-\s]?\d{7}/;
+  var CARD = /\b(\d{4}[-\s]?){3}\d{3,4}\b/;
+  var ADDRESS = /((서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[^\s]{0,6}\s?[가-힣]{1,5}(구|군)\s?[가-힣]{1,6}(동|읍|면|로|길)\s?\d{1,5})/;
+  var ANTONYM = [["허용","금지"],["가능","불가"],["찬성","반대"],["늘","줄"],["좋","나쁘"],["높","낮"],["시작","종료"],["공개","비공개"],["포함","제외"],["참여","불참"]];
   var NEG = /(안|못|없|아니|않)/;
   var TIME = /(오늘|내일|모레|어제|글피|이번\s*주|다음\s*주|아침|점심|저녁|밤|새벽)/;
   var LINE = /(\d+\s*호선|분당선|신분당선|경의중앙선|공항철도|공항철도)/;
@@ -62,8 +68,8 @@
 
   function classify(removed, inserted){
     var signals = [];
-    if(PHONE.test(removed) || EMAIL.test(removed) || ACCOUNT.test(removed)){
-      signals.push("전화번호·메일·계좌 모양이 사라짐");
+    if(PHONE.test(removed) || EMAIL.test(removed) || ACCOUNT.test(removed) || RRN.test(removed) || CARD.test(removed) || ADDRESS.test(removed)){
+      signals.push("전화번호·메일·계좌·주소 모양이 사라짐");
       return { kind:"privacy", signals:signals };
     }
     var dR = (removed.match(/\d+/g) || []), dI = (inserted.match(/\d+/g) || []);
@@ -78,8 +84,19 @@
     var placeR = removed.match(/(\d+\s*호선|[가-힣]{2,}역)/g) || [];
     var placeI = inserted.match(/(\d+\s*호선|[가-힣]{2,}역)/g) || [];
     if(placeR.join("|") !== placeI.join("|") && !lineR && !lineI){ signals.push("장소 표현이 바뀜"); }
+    var ant = "";
+    ANTONYM.forEach(function(pair){
+      var a = pair[0], b = pair[1];
+      if((removed.indexOf(a) >= 0 && inserted.indexOf(b) >= 0) || (removed.indexOf(b) >= 0 && inserted.indexOf(a) >= 0)){
+        ant = a + " → " + b;
+      }
+    });
+    if(ant){ signals.push("반대말로 바뀜(" + ant + ")"); }
     if(signals.length){ return { kind:"meaning", signals:signals }; }
-    return { kind:"expression", signals:["숫자·부정어·고유명사 변화 없음"] };
+    if((removed.length >= 12 && inserted.length <= removed.length - 8)){
+      return { kind:"check", signals:["긴 문장이 통째로 줄어듦", "개인정보인지 확인 필요"] };
+    }
+    return { kind:"expression", signals:["숫자·부정어·고유명사·반대말 변화 없음"] };
   }
 
   function diffSentences(oldText, newText){
@@ -133,7 +150,8 @@
   var KIND = {
     expression:{ label:"표현 수정", pill:"n", desc:"글자·조사만 바뀌었습니다." },
     meaning:{ label:"뜻이 바뀐 수정", pill:"a", desc:"숫자나 부정어가 바뀌어 읽는 뜻이 달라질 수 있습니다." },
-    privacy:{ label:"개인정보 삭제", pill:"b", desc:"지워진 값은 저장하지도 보여 주지도 않습니다." }
+    privacy:{ label:"개인정보 삭제", pill:"b", desc:"지워진 값은 저장하지도 보여 주지도 않습니다." },
+    check:{ label:"확인 필요", pill:"n", desc:"긴 문장이 줄었는데 개인정보 모양이 없습니다. 작성자에게 한 번 묻고, 답 전에는 내용을 접습니다." }
   };
 
   function esc(s){
@@ -212,6 +230,12 @@
       var body = "";
       e.blocks.forEach(function(b){
         if(view === "reader" && b.verdict.kind === "expression") return;
+        if(b.verdict.kind === "check"){
+          body += '<div class="privacy" data-anchor="' + (b.idx === null ? "" : b.idx) + '">' +
+            "<b>지워진 부분이 있어요. 개인정보인지 확인이 필요합니다.</b> 확인 전에는 내용을 저장하지 않고, 작성자에게 한 번 묻습니다. " +
+            "<br><span class='tiny muted'>판정 근거: " + esc(b.verdict.signals.join(" / ")) + "</span></div>";
+          return;
+        }
         if(b.verdict.kind === "privacy"){
           body += '<div class="privacy" data-anchor="' + (b.idx === null ? "" : b.idx) + '">' +
             "<b>전화번호가 지워졌어요.</b> 지워진 값과 그 앞뒤 문장은 저장하지도, 비교해서 보여 주지도 않습니다. " +
@@ -262,6 +286,12 @@
     var changeOnly = 0, contentChars = 0, privacySaved = 0;
     EDITS.forEach(function(e){
       e.blocks.forEach(function(b){
+        if(b.verdict.kind === "check"){
+          body += '<div class="privacy" data-anchor="' + (b.idx === null ? "" : b.idx) + '">' +
+            "<b>지워진 부분이 있어요. 개인정보인지 확인이 필요합니다.</b> 확인 전에는 내용을 저장하지 않고, 작성자에게 한 번 묻습니다. " +
+            "<br><span class='tiny muted'>판정 근거: " + esc(b.verdict.signals.join(" / ")) + "</span></div>";
+          return;
+        }
         if(b.verdict.kind === "privacy"){ privacySaved += bytes(b.before || ""); return; }
         changeOnly += bytes(b.removed) + bytes(b.inserted) + 40; // 문장당 메타데이터 40바이트 가정
         contentChars += b.removed.length + b.inserted.length;
@@ -291,7 +321,38 @@
     $("changeWrap").scrollIntoView({behavior:"smooth", block:"start"});
   });
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"]];
+
+  // ---------- v2 판정 시험대 ----------
+  function runTest(){
+    var a = $("tA").value.trim(), b = $("tB").value.trim();
+    if(!a || !b){ $("testOut").textContent = "두 문장을 모두 넣어 주세요."; return; }
+    var w = lcsOps(words(a), words(b));
+    var removed = joinType(w, "-"), inserted = joinType(w, "+");
+    var v = classify(removed, inserted);
+    var k = KIND[v.kind] || KIND.expression;
+    var label = v.kind === "privacy" ? "개인정보 삭제" : k.label;
+    var showDiff = v.kind === "privacy" ? "<span style='color:#0b6b3a;font-weight:700'>지워진 내용은 표시하지 않습니다.</span>" : diffHtml(w);
+    var note = v.kind === "check" ? " 확인 전에는 저장하지 않고 작성자에게 한 번 묻습니다." : "";
+    $("testOut").innerHTML = '<div style="margin-bottom:6px"><span class="pill ' + k.pill + '">' + label + "</span></div>" +
+      '<div class="diff">' + showDiff + "</div>" +
+      '<div class="why">판정 근거: <b>' + esc(v.signals.join(" / ")) + "</b>" + note + "</div>";
+  }
+  if($("testRun")){
+    $("testRun").addEventListener("click", runTest);
+    $("testAddr").addEventListener("click", function(){
+      $("tA").value = "제 집은 서울 서초구 내곡동 123-45이고 가방은 역무원실에 있어요.";
+      $("tB").value = "가방은 역무원실에 있어요.";
+      runTest();
+    });
+    $("testLong").addEventListener("click", function(){
+      $("tA").value = "어제 그 가방은 역무원실에서 오후 여섯 시 전에 찾을 수 있었고 제가 직접 확인했어요.";
+      $("tB").value = "가방은 역무원실에 있어요.";
+      runTest();
+    });
+    runTest();
+  }
+
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"]];
   function selectTab(id){
     tabs.forEach(function(pair){
       var on = pair[0] === id;
