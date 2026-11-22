@@ -283,7 +283,7 @@
     return scored.map(function(x){ return x.doc.id; });
   }
 
-  if($("bench")){
+  if($("benchSummary")){
     var rows = GOLD.map(function(g){
       var k = keywordEngine(g.q), f = fragmentEngine(g.q);
       return {
