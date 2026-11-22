@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>기억 조각으로 찾기 — 단어가 아니라 맥락으로 | sun-pickle</title>
+<style>
+  :root{
+    --bg:#f6f7f9;--card:#fff;--ink:#15181d;--muted:#5c6471;--line:#e3e7ec;
+    --p:#6b4ef2;--p-soft:#efeaff;--green:#0f9d58;--green-soft:#e7f7ee;
+    --amber:#b45309;--amber-soft:#fff6e8;--focus:#1a73e8;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 12px 30px -20px rgba(16,24,40,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.62 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:26px 18px 80px}
+  header.top{background:#fff;border-bottom:1px solid var(--line)}
+  .top-in{max-width:1120px;margin:0 auto;padding:18px 18px 12px}
+  .kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  h1{font-size:26px;line-height:1.28;margin:6px 0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  nav.tabs{max-width:1120px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow:auto}
+  nav.tabs button{border:0;background:none;padding:13px 12px;font:inherit;font-weight:700;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--p)}
+  nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:6px 6px 0 0}
+  section[role="tabpanel"][hidden]{display:none}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  h2{font-size:17px;margin:0 0 10px}h3{font-size:14px;margin:16px 0 6px}
+  p{margin:0 0 10px}ul,ol{margin:0 0 10px;padding-left:20px}li{margin:3px 0}
+  .muted{color:var(--muted)}.small{font-size:13.5px}.tiny{font-size:12px}
+  code{background:#f1f3f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:800}
+  .pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800}
+  .pill.p{background:var(--p-soft);color:#4b2fd0}.pill.g{background:var(--green-soft);color:#0b6b3a}
+  .pill.a{background:var(--amber-soft);color:var(--amber)}.pill.n{background:#eef1f5;color:#3d4552}
+
+  .searchbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+  .searchbox label{font-size:12px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px}
+  .qrow{display:flex;gap:8px}
+  .qrow input{flex:1;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font:inherit;font-size:15px;outline:none}
+  .qrow input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+  .qrow button{border:0;border-radius:12px;background:var(--p);color:#fff;font:inherit;font-weight:800;padding:0 18px;cursor:pointer}
+  .qrow button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .ex{border:1px solid var(--line);background:#fbfbfd;border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer;color:#3d4552}
+  .ex:hover{background:var(--p-soft);border-color:#d9cffd}
+  .facets{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+  .facet{display:flex;align-items:center;gap:6px;font-size:12.5px}
+  .facet span.lb{font-weight:800;color:var(--muted)}
+  .facet select{border:1px solid var(--line);border-radius:9px;padding:5px 8px;font:inherit;font-size:12.5px;background:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{border:1px solid #d9cffd;background:var(--p-soft);color:#3f21b8;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer}
+  .chip.off{background:#fff;border-color:var(--line);color:var(--muted);text-decoration:line-through}
+  .res{margin-top:14px;display:grid;gap:10px}
+  .item{border:1px solid var(--line);border-radius:13px;padding:13px 14px;background:#fff}
+  .item .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+  .item h3{margin:5px 0 4px;font-size:15px}
+  .item .snip{font-size:13.5px;color:#333b45}
+  .item mark{background:#fff2a8;color:inherit;padding:0 1px;border-radius:3px}
+  .whybox{margin-top:9px;border-top:1px dashed var(--line);padding-top:8px;font-size:12px;color:var(--muted)}
+  .whybox b{color:var(--ink)}
+  .scorebar{height:5px;border-radius:3px;background:#eef0f4;overflow:hidden;margin-top:8px}
+  .scorebar i{display:block;height:100%;background:linear-gradient(90deg,#8b73f8,#6b4ef2)}
+  .empty{border:1px dashed var(--line);border-radius:13px;padding:18px;text-align:center;color:var(--muted);font-size:13.5px}
+  .log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.7;background:#12101c;color:#d8d3f5;border-radius:10px;padding:10px 12px;max-height:170px;overflow:auto;margin:0;white-space:pre-wrap}
+  .callout{border-left:3px solid var(--p);background:var(--p-soft);padding:10px 12px;border-radius:0 10px 10px 0;font-size:13.5px;margin:12px 0}
+  .callout.warn{border-color:#f59e0b;background:var(--amber-soft)}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+  .kpi div{border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+  .kpi b{display:block;font-size:13px}.kpi span{font-size:12px;color:var(--muted)}
+  footer.meta{max-width:1120px;margin:0 auto;padding:6px 18px 40px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="kicker">sun-pickle · Npossible 새판 시즌0 · 제안 미션 <b id="missionId">mission (proposed)</b></div>
+    <h1>검색어가 기억 안 날 때 — 단어 대신 <span style="background:linear-gradient(transparent 62%,#d8ccff 0)">맥락</span>으로 찾기</h1>
+    <p class="sub">“그거 뭐였지”만 남아도 찾아지게. 언제·어디서·누가·무슨 말투였는지를 입력으로 받고, 왜 이 결과인지 함께 보여 줍니다. <b>이 페이지의 검색은 실제로 동작합니다.</b></p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="출품작 구성">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">① 체험 (실제 검색)</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 문제 근거</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 명세·엣지케이스</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 지표·검증·한계</button>
+  </nav>
+</header>
+
+<div class="wrap">
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+  <div class="searchbox" style="margin-top:22px">
+    <label for="q">기억나는 대로 적어 보세요 (문장이어도 됩니다)</label>
+    <div class="qrow">
+      <input id="q" type="search" placeholder="예: 겨울에 본 기사인데 전세 대출 금리 얘기였고 숫자가 3%대였어" autocomplete="off">
+      <button id="go">찾기</button>
+    </div>
+    <div class="examples" id="examples"></div>
+    <div class="facets">
+      <label class="facet"><span class="lb">언제</span>
+        <select id="f-when">
+          <option value="any">기억 안 남</option>
+          <option value="7">최근 7일</option>
+          <option value="30">최근 1달</option>
+          <option value="365">최근 1년</option>
+        </select>
+      </label>
+      <label class="facet"><span class="lb">어디서</span>
+        <select id="f-where">
+          <option value="any">전체</option>
+          <option value="뉴스">뉴스</option>
+          <option value="판">판</option>
+          <option value="쪽지">쪽지</option>
+          <option value="검색기록">내 검색 기록</option>
+        </select>
+      </label>
+      <label class="facet"><span class="lb">누가</span>
+        <select id="f-who">
+          <option value="any">기억 안 남</option>
+          <option value="기사">기사·보도</option>
+          <option value="사람">사람이 쓴 글</option>
+        </select>
+      </label>
+      <span class="tiny muted" style="align-self:center">예시 자료 <b id="corpusCount">0</b>건에서 찾습니다</span>
+    </div>
+    <div id="chipArea" hidden>
+      <div class="tiny muted" style="margin-top:12px;font-weight:800">이 조각으로 찾고 있어요 — 빼려면 눌러서 끄세요</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 330px;gap:22px;align-items:start;margin-top:16px" class="layout">
+    <div>
+      <div class="res" id="results"></div>
+    </div>
+    <div>
+      <div class="card pad">
+        <h2 style="font-size:15px">이 검색이 하는 일</h2>
+        <ul class="tiny" style="color:#3d4552;padding-left:18px">
+          <li>문장에서 <b>조각</b>을 뽑습니다(명사 후보·숫자·기간 표현).</li>
+          <li>조각마다 제목·본문·태그에 가중치를 두고 점수를 냅니다.</li>
+          <li>‘언제’는 <b>감쇠</b>로만 씁니다 — 오래된 것도 순위에서 사라지지 않게.</li>
+          <li>결과마다 <b>왜 이 결과인지</b>와 맞은 조각을 표시합니다.</li>
+        </ul>
+        <div class="tiny muted" style="margin-top:6px">※ 예시 자료는 제가 만든 18건입니다. 실제 네이트 검색 로그가 아닙니다.</div>
+      </div>
+      <div class="card pad" style="margin-top:14px">
+        <h2 style="font-size:15px">내 검색 기록</h2>
+        <pre class="log" id="log">(아직 검색 없음)</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>왜 ‘검색어를 못 만드는 것’이 문제인가</h2>
+    <p class="small">검색은 <b>단어를 정확히 아는 사람</b>에게 잘 맞춰져 있습니다. 그런데 다시 찾고 싶은 것은 대개 단어가 아니라 장면으로 기억납니다 — “겨울에, 지하철에서, 누가 말했는데, 숫자가 3%대였어”. 이때 사용자는 검색창 앞에서 멈춥니다. 검색을 못 하는 게 아니라 <b>질의를 만들지 못하는</b> 것입니다.</p>
+    <table>
+      <thead><tr><th style="width:31%">기억에 남는 것</th><th style="width:30%">지금 검색창이 받는 것</th><th>이 안이 받는 것</th></tr></thead>
+      <tbody>
+        <tr><td>“겨울쯤”, “작년 말”</td><td>날짜 필터를 따로 열어야 함</td><td>문장 안의 시간 표현을 읽어 <b>기간 후보</b>로 제안</td></tr>
+        <tr><td>“기사였는지 판 글이었는지”</td><td>전체 검색 → 결과가 섞임</td><td>‘어디서’ 한 번으로 좁힘 + 결과 카드에 출처 표시</td></tr>
+        <tr><td>“3%대 숫자”</td><td>“3%”로 검색하면 잡음이 많음</td><td>숫자·단위를 따로 조각으로 뽑아 <b>본문 매칭</b>에 사용</td></tr>
+        <tr><td>“누가 말했는지”</td><td>없음</td><td>기사·사람 글 구분</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn small"><b>미션 경계.</b> ‘읽던 뉴스를 다시 찾는’ 기록 자동 저장(다른 미션)이 아니라, <b>질의를 만들지 못하는 순간의 입력 방식</b>입니다. 방문 기록이 없어도, 다른 기기에서 봤어도 동작해야 하므로 입력 자체를 바꿉니다.</div>
+    <p class="tiny muted">※ 위 관찰은 일반적인 검색 사용 경험에서 출발한 문제 정의이며, 네이트 사용자 로그로 검증한 수치는 아닙니다. 검증 계획은 ④에 적었습니다.</p>
+  </div>
+</section>
+
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>질의 → 조각 → 결과의 흐름</h2>
+    <pre class="log" style="max-height:none;font-size:12px;color:#d8d3f5">[입력] "겨울에 본 기사인데 전세 대출 금리 3%대"
+   ├ 조각 추출   : 전세, 대출, 금리, 3%, 겨울(시간 표현)
+   ├ 시간 해석   : "겨울" → 1년 범위 후보(사용자가 끌 수 있음)
+   ├ 필드 가중치 : 제목 3.0 · 태그 2.0 · 본문 1.0
+   ├ 점수        : 조각별 (정확 일치 1.0 / 부분 일치 0.4) × 필드 가중치 합
+   └ 시간 감쇠   : score × (1 + 0.15 × 최근성) — 오래된 문서를 지우지 않음
+[결과] 카드마다 맞은 조각을 하이라이트 + "왜 이 결과인지" 한 줄
+[실패] 조각이 하나도 안 맞으면 → "기억 조각을 바꿔 보세요"와 함께 자주 쓰는 조각 제안</pre>
+
+    <h3>화면 규칙</h3>
+    <ul class="small">
+      <li>결과를 <b>숨기지 않습니다.</b> 상위 5개는 항상 보이고, 점수는 막대와 숫자로 함께 표시(왜 1등인지 확인 가능).</li>
+      <li>조각 칩은 <b>끄고 켤 수 있습니다.</b> 자동 해석이 틀렸을 때 사용자가 바로 고칠 수 있어야 자동화가 실패해도 검색이 망가지지 않습니다.</li>
+      <li>시간은 <b>감쇠만</b>. “최근 것만” 같은 강한 필터는 사용자가 고를 때만.</li>
+      <li>출처(뉴스/판/쪽지/검색기록)를 항상 표시 — 같은 사건이라도 출처가 다르면 신뢰가 다릅니다.</li>
+    </ul>
+
+    <h3>엣지케이스</h3>
+    <table>
+      <thead><tr><th style="width:27%">상황</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>조각이 전부 흔한 단어(“그거”, “있잖아”)</td><td>점수 계산 대신 “무엇을 찾는지 한 조각만 더 알려 주세요”로 되묻고, 최근 항목을 보여 줌</td></tr>
+        <tr><td>시간 표현이 모호함(“얼마 전”, “한참 전”)</td><td>기간을 단정하지 않고 후보 2개(“최근 1달 / 최근 1년”)를 칩으로 제안</td></tr>
+        <tr><td>같은 사건 여러 출처</td><td>중복 묶음 — 대표 1건 + “비슷한 결과 3건” 접기</td></tr>
+        <tr><td>개인 기록(쪽지·검색기록)</td><td>본인 것만 검색. 결과 카드에도 ‘내 기록’ 표시, 공유 링크 생성 불가</td></tr>
+        <tr><td>오타·띄어쓰기</td><td>한글 2글자 단위 부분 일치로 흡수(‘전새대출’ → ‘전세대출’과 부분 일치)</td></tr>
+        <tr><td>결과 0건</td><td>“없어요”로 끝내지 않고, 맞은 조각 수 · 가장 가까운 1건 · 조각 제안을 보여 줌</td></tr>
+        <tr><td>느린 회선</td><td>입력 중 300ms 디바운스 후 1회 요청, 이전 결과 유지(화면 비우지 않음)</td></tr>
+        <tr><td>키보드·낭독기</td><td>결과 개수를 <code>aria-live</code>로 알림(“결과 3건”), 카드마다 제목·출처·날짜를 한 문장으로</td></tr>
+      </tbody>
+    </table>
+
+    <h3>부작용</h3>
+    <ul class="small">
+      <li><b>자동 해석이 틀리면 더 나빠짐</b> — 조각 칩을 끌 수 있게 하고, 해석을 화면에 그대로 노출.</li>
+      <li><b>개인정보</b> — 쪽지·검색기록은 본인 범위 안에서만. 서버 로그에 질의 원문을 남길 때는 목적·보관 기간을 명시(가능하면 조각만 저장).</li>
+      <li><b>연산 비용</b> — 조각 추출은 질의당 1회, 캐시 가능. 결과 개인화는 넣지 않음(설명 가능성 우선).</li>
+    </ul>
+  </div>
+</section>
+
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>지금 확인되는 것 / 확인해야 할 것</h2>
+    <div class="callout small"><b>이 페이지에서 실제로 확인 가능한 것.</b> 아래 검색창은 예시 자료 18건에 대해 <b>정말로 동작합니다.</b> 문장을 넣으면 조각이 뽑히고, 점수·근거와 함께 결과가 나옵니다. 다만 자료가 18건이라 ‘검색 품질’의 증거가 아니라 <b>동작·설명 가능성의 증거</b>입니다.</div>
+    <h3>이벤트</h3>
+    <table>
+      <thead><tr><th style="width:33%">이벤트</th><th style="width:24%">시점</th><th>쓰임</th></tr></thead>
+      <tbody>
+        <tr><td><code>query_submit</code> (원문 길이 구간)</td><td>검색 실행</td><td>문장형 질의 비율</td></tr>
+        <tr><td><code>fragment_toggle</code></td><td>조각 칩 끄기/켜기</td><td>자동 해석 오류율의 대리 지표</td></tr>
+        <tr><td><code>result_click</code> / <code>result_open_rank</code></td><td>결과 클릭</td><td>상위 3개 안에서 찾은 비율</td></tr>
+        <tr><td><code>requery_within_30s</code></td><td>30초 내 재검색</td><td>첫 결과 실패율</td></tr>
+        <tr><td><code>zero_result</code></td><td>0건</td><td>조각 추출 실패 감시</td></tr>
+      </tbody>
+    </table>
+    <div class="kpi">
+      <div><b>상위 3개 내 클릭률</b><span>목표 70% 이상</span></div>
+      <div><b>30초 내 재검색률</b><span>가드레일 35% 이하</span></div>
+      <div><b>0건 비율</b><span>5% 이하</span></div>
+      <div><b>조각 끄기 비율</b><span>20% 초과 시 해석 규칙 재검토</span></div>
+    </div>
+    <h3>검증 설계</h3>
+    <ul class="small">
+      <li>실제 로그 1만 건으로 <b>오프라인 평가</b>: 같은 질의에 대해 키워드 검색 vs 조각 검색의 상위 3개 적중률 비교(정답 라벨은 사람 2명이 붙임).</li>
+      <li>소규모 사용성 테스트 5명: “지난달에 본 글 다시 찾기” 과제로 성공률·소요 시간 측정.</li>
+      <li>A/B: 현행 검색 / 조각 입력. 주 지표 상위3 클릭률, 보조 재검색률.</li>
+    </ul>
+    <h3>아직 확인하지 못한 것</h3>
+    <ul class="small">
+      <li>한국어 조각 추출의 실제 품질 — 지금 구현은 규칙 기반(공백·2글자 bigram)이고 형태소 분석기가 아닙니다.</li>
+      <li>자료 18건은 손으로 만든 예시라 실제 문서 분포(길이·중복·표제어)와 다릅니다.</li>
+      <li>감쇠 계수 0.15는 근거 있는 값이 아니라 <b>조정 가능한 초기값</b>입니다.</li>
+      <li>네이트 검색의 실제 랭킹·색인 구조 — 확인하지 못해 ‘대체’가 아니라 ‘입력층’ 제안으로 범위를 좁혔습니다.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="meta">sun-pickle · Pickle · Npossible 새판 시즌0 · 제안 미션 · 출품물 CC BY-SA 4.0 / 코드 GPL-3.0 · 예시 자료는 창작</footer>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
