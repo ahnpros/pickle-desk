@@ -149,7 +149,7 @@
 
   var KIND = {
     expression:{ label:"표현 수정", pill:"n", desc:"글자·조사만 바뀌었습니다." },
-    meaning:{ label:"뜻이 바뀐 수정", pill:"a", desc:"숫자나 부정어가 바뀌어 읽는 뜻이 달라질 수 있습니다." },
+    meaning:{ label:"뜻이 바뀐 수정", pill:"a", desc:"숫자나 부정어나 반대말이 바뀌어 읽는 뜻이 달라질 수 있습니다." },
     privacy:{ label:"개인정보 삭제", pill:"b", desc:"지워진 값은 저장하지도 보여 주지도 않습니다." },
     check:{ label:"확인 필요", pill:"n", desc:"긴 문장이 줄었는데 개인정보 모양이 없습니다. 작성자에게 한 번 묻고, 답 전에는 내용을 접습니다." }
   };
@@ -275,8 +275,8 @@
     $("ruleBox").innerHTML =
       '<table><thead><tr><th>시각</th><th>판정</th><th>바뀐 것</th></tr></thead><tbody>' +
       rows + "</tbody></table>" +
-      '<p class="tiny muted" style="margin-top:8px">이 표는 위 예시 글의 수정 3건을 실제로 비교해 만든 결과입니다. 판정은 아래 규칙으로 계산합니다.</p>' +
-      '<pre style="font-size:11.5px">사라진 토막에 전화번호 모양 → 개인정보 삭제(내용 비저장)\n숫자·부정어·노선·시점 변화 → 뜻이 바뀐 수정\n그 밖 → 표현 수정</pre>';
+      '<p class="tiny muted" style="margin-top:8px">이 표는 위 예시 글의 수정 ' + EDITS.length + "건을 실제로 비교해 만든 결과입니다. 판정은 아래 규칙으로 계산합니다.</p>' +
+      '<pre style="font-size:11.5px">사라진 토막에 전화번호·계좌·주소 모양 → 개인정보 삭제(내용 비저장)\n숫자·부정어·노선·시점·반대말 변화 → 뜻이 바뀐 수정\n긴 문장이 크게 줄었는데 모양이 없음 → 확인 필요\n그 밖 → 표현 수정</pre>';
   }
 
   function bytes(s){ return new Blob([s]).size; }
@@ -330,7 +330,7 @@
     var removed = joinType(w, "-"), inserted = joinType(w, "+");
     var v = classify(removed, inserted);
     var k = KIND[v.kind] || KIND.expression;
-    var label = v.kind === "privacy" ? "개인정보 삭제" : k.label;
+    var label = v.kind === "privacy" ? "개인정보 삭제" : (v.kind === "check" ? "확인 필요" : k.label);
     var showDiff = v.kind === "privacy" ? "<span style='color:#0b6b3a;font-weight:700'>지워진 내용은 표시하지 않습니다.</span>" : diffHtml(w);
     var note = v.kind === "check" ? " 확인 전에는 저장하지 않고 작성자에게 한 번 묻습니다." : "";
     $("testOut").innerHTML = '<div style="margin-bottom:6px"><span class="pill ' + k.pill + '">' + label + "</span></div>" +
