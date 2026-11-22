@@ -170,6 +170,7 @@
       $("body").value = rec.body;
       $("restoreSlot").innerHTML = '<div class="tiny" style="color:#0b6b3a;font-weight:700">' +
         rec.savedClock + "에 저장된 글을 그대로 불러왔어요. 이어서 쓰세요.</div>";
+      setState("saved", rec);
       renderStatus();
       $("body").focus();
       var el = $("body");

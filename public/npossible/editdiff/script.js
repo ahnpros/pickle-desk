@@ -26,6 +26,7 @@
   var EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
   var ACCOUNT = /\d{2,6}-\d{2,6}-\d{2,6}/;
   var NEG = /(안|못|없|아니|않)/;
+  var TIME = /(오늘|내일|모레|어제|글피|이번\s*주|다음\s*주|아침|점심|저녁|밤|새벽)/;
   var LINE = /(\d+\s*호선|분당선|신분당선|경의중앙선|공항철도|공항철도)/;
 
   function sentences(t){
@@ -71,6 +72,8 @@
     if(negR !== negI){ signals.push("부정어가 " + (negI ? "생김" : "사라짐")); }
     var lineR = (removed.match(LINE)||[]).join(","), lineI = (inserted.match(LINE)||[]).join(",");
     if(lineR !== lineI){ signals.push("노선 이름이 바뀜"); }
+    var timeR = (removed.match(TIME)||[]).join(","), timeI = (inserted.match(TIME)||[]).join(",");
+    if(timeR !== timeI){ signals.push("시점 표현이 바뀜"); }
     var pnR = removed.replace(/\s/g,""), pnI = inserted.replace(/\s/g,"");
     var placeR = removed.match(/(\d+\s*호선|[가-힣]{2,}역)/g) || [];
     var placeI = inserted.match(/(\d+\s*호선|[가-힣]{2,}역)/g) || [];
@@ -139,7 +142,9 @@
 
   function diffHtml(ops){
     var out = "";
-    ops.forEach(function(o){
+    ops.forEach(function(o, i){
+      var prev = ops[i-1];
+      if(prev && ((prev.t === "-" && o.t === "+") || (prev.t === "+" && o.t === "-"))) out += " ";
       if(o.t === "=") out += esc(o.v);
       else if(o.t === "-") out += '<span class="del">' + esc(o.v) + "</span>";
       else out += '<span class="ins">' + esc(o.v) + "</span>";
@@ -247,7 +252,7 @@
       '<table><thead><tr><th>시각</th><th>판정</th><th>바뀐 것</th></tr></thead><tbody>' +
       rows + "</tbody></table>" +
       '<p class="tiny muted" style="margin-top:8px">이 표는 위 예시 글의 수정 3건을 실제로 비교해 만든 결과입니다. 판정은 아래 규칙으로 계산합니다.</p>' +
-      '<pre style="font-size:11.5px">사라진 토막에 전화번호 모양 → 개인정보 삭제(내용 비저장)\n숫자·부정어·노선 이름 변화 → 뜻이 바뀐 수정\n그 밖 → 표현 수정</pre>';
+      '<pre style="font-size:11.5px">사라진 토막에 전화번호 모양 → 개인정보 삭제(내용 비저장)\n숫자·부정어·노선·시점 변화 → 뜻이 바뀐 수정\n그 밖 → 표현 수정</pre>';
   }
 
   function bytes(s){ return new Blob([s]).size; }
