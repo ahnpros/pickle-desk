@@ -188,8 +188,12 @@
     var last = VERSIONS[VERSIONS.length-1];
     $("postBody").textContent = last.text;
     $("editedBadge").textContent = "수정됨 · " + (VERSIONS.length-1) + "번 고침";
-    var serious = EDITS.filter(function(e){ return e.kind !== "expression"; }).length;
-    $("commentHint").textContent = serious ? "뜻이 바뀐 수정 " + serious + "건 · 개인정보 삭제 포함" : "";
+    var meaning = EDITS.filter(function(e){ return e.kind === "meaning"; }).length;
+    var privacy = EDITS.filter(function(e){ return e.kind === "privacy"; }).length;
+    var parts = [];
+    if(meaning) parts.push("뜻이 바뀐 수정 " + meaning + "건");
+    if(privacy) parts.push("개인정보 삭제 " + privacy + "건");
+    $("commentHint").textContent = parts.join(" · ");
   }
 
   function renderComments(){
