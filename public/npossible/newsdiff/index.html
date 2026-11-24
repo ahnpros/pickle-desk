@@ -113,6 +113,7 @@
     <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 동작 방식·명세</button>
     <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 검증·한계</button>
     <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 지난 라운드 반영</button>
+    <button role="tab" id="t7" aria-controls="p7" aria-selected="false">⑦ 이번 라운드 반영</button>
   </nav>
 </header>
 
@@ -137,7 +138,7 @@
     </div>
 
     <div class="chips" aria-hidden="true">
-      <div class="chip add"><b id="cAdd">0</b><span>새로 밝혀짐</span></div>
+      <div class="chip add"><b id="cAdd">0</b><span>이전 기사에 없던 문장</span></div>
       <div class="chip chg"><b id="cChg">0</b><span>문장이 바뀜</span></div>
       <div class="chip rem"><b id="cRem">0</b><span>빠짐</span></div>
       <div class="chip fix"><b id="cFix">0</b><span>정정 표시</span></div>
@@ -166,8 +167,8 @@
   </div>
 
   <div class="card">
-    <h2>임계값 경계에 있는 문장</h2>
-    <p class="small muted" style="margin-top:-4px">문장 짝짓기는 유사도 0.5를 기준으로 합니다. 그 경계(0.35–0.72)에 걸린 짝만 모았습니다 — 이 줄들은 ‘같은 문장인지 다른 문장인지’ 기계적으로 확신하기 어려운 경우입니다. 그래서 이 화면은 이 줄들을 확신하지 않고 그대로 보여 주고, 짝지어진 것과 아닌 것을 함께 적습니다.</p>
+    <h2>같은 문장인지 애매한 짝</h2>
+    <p class="small muted" style="margin-top:-4px">사실을 판정하지 않습니다. 위 칸의 이름은 이전 기사에 그 문장이 없었다는 뜻이고, 새 사실이라는 뜻은 아니에요. 문장 짝짓기는 유사도 0.5를 기준으로 합니다. 그 경계(0.35–0.72)에 걸린 짝만 모았습니다 — 이 줄들은 ‘같은 문장인지 다른 문장인지’ 기계적으로 확신하기 어려운 경우입니다. 그래서 이 화면은 이 줄들을 확신하지 않고 그대로 보여 주고, 짝지어진 것과 아닌 것을 함께 적습니다.</p>
     <table>
       <thead><tr><th>이전 기사</th><th>지금 기사</th><th>유사도</th><th>판정</th></tr></thead>
       <tbody id="edgeBody"><tr><td colspan="4" class="muted small">경계에 걸린 짝이 없습니다.</td></tr></tbody>
@@ -343,11 +344,101 @@ SAME_MIN  = 0.94   // 이 위는 '그대로'로 본다
     </ul>
   </div>
 </section>
+<section role="tabpanel" id="p7" aria-labelledby="t7" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>이번 라운드에서 받은 반응과 바꾼 것</h2>
+    <p class="small muted">사용자 패널 둘, 리뷰어, 운영감사가 남긴 문장과 그에 대응해 바꾼 것이에요. 화면에 쓰는 말부터 풀었습니다.</p>
+    <table>
+      <thead><tr><th style="width:36%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>일반 사용자 “‘임계값 경계’는 좀 어려워서 ‘같은 문장인지 애매함’처럼 풀어 쓰면 더 이해하기 쉬울 것 같아요”</td>
+          <td>화면의 제목을 같은 문장인지 애매한 짝으로 바꿨어요. 요약 숫자 칸의 이름도 이전 기사에 없던 문장으로 바꿨습니다.</td>
+        </tr>
+        <tr>
+          <td>리뷰어 “‘새로 밝혀짐’은 단순히 추가된 문장을 확인된 사실로 오해하게 할 수 있다”</td>
+          <td>이름을 이전 기사에 없던 문장으로 바꾸고, 사실 판정이 아니라는 문장을 표 위에 붙였어요. 새 사실인지 다른 취재원이 다른 말을 한 것인지는 판정하지 않는다는 점도 함께 적었습니다.</td>
+        </tr>
+        <tr>
+          <td>리뷰어와 파워유저 “유사도 0.5가 실제 기사에서도 타당한지, 창작 예시 말고 실제 기사에서도 잘 맞는지 궁금하다”</td>
+          <td>기준값 시험 상자를 넣었어요. 문장 두 개를 붙여 넣고 기준값을 0.3에서 0.8까지 움직이면, 같은 문장으로 볼지 말지가 바뀌는 것을 볼 수 있어요. 실제 기사 문장으로 직접 넣어 볼 수 있습니다. 다만 실제 기사 묶음으로 채점한 값은 아니에요.</td>
+        </tr>
+        <tr>
+          <td>운영감사 “매체별 본문 수집과 이용 권한을 관리하고, 문장 비교가 잘못 연결되는 사례를 꾸준히 점검해야 한다”</td>
+          <td>기사 원문을 저장하지 않고 이 브라우저 안에서만 비교한다고 화면에 적었어요. 잘못 연결된 짝은 감추지 않고 애매한 짝 표에 남겨 둡니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>기준값 시험</h2>
+    <p class="tiny muted">문장 두 개를 넣으면 두 글자 묶음으로 유사도를 계산해요. 같은 방식이라 기준값을 어디에 두느냐에 따라 같은 문장으로 볼지가 달라지는 것을 직접 볼 수 있어요.</p>
+    <label class="tiny" style="font-weight:800" for="dv-a">이전 기사 문장</label>
+    <input id="dv-a" type="text" value="경찰은 피해자가 3명이라고 밝혔다." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px">
+    <label class="tiny" style="font-weight:800" for="dv-b">지금 기사 문장</label>
+    <input id="dv-b" type="text" value="경찰은 피해자가 5명이라고 밝혔다." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px">
+    <div class="tiny muted">기준값 <b id="dv-t">0.50</b></div>
+    <input id="dv-range" type="range" min="0.3" max="0.8" step="0.05" value="0.5" style="width:100%">
+    <div id="dv-out" class="tiny" style="margin-top:10px;font-weight:700"></div>
+  </div>
+</section>
+
 
 </main>
 <footer class="page">
   sun-pickle · 제안 미션(같은 사건, 어제 기사와 오늘 기사) · 글·자료 CC BY-SA 4.0, 코드 GPL-3.0 · 기사·인물·기관은 예시로 쓴 창작이며 실제 보도가 아닙니다. 개인정보 없음.
 </footer>
 <script src="script.js?v=e8e5dd7e"></script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var out = $("dv-out");
+  if(!out) return;
+
+  function bigrams(s){
+    var t = String(s || "").replace(/[\s.,!?‘’"'()]/g, "");
+    var set = {};
+    for(var i = 0; i < t.length - 1; i++){
+      var g = t.slice(i, i + 2);
+      set[g] = (set[g] || 0) + 1;
+    }
+    return set;
+  }
+  function dice(a, b){
+    var A = bigrams(a), B = bigrams(b);
+    var ka = Object.keys(A), kb = Object.keys(B);
+    if(!ka.length || !kb.length) return 0;
+    var inter = 0;
+    ka.forEach(function(k){ if(B[k]) inter += Math.min(A[k], B[k]); });
+    var total = 0;
+    ka.forEach(function(k){ total += A[k]; });
+    kb.forEach(function(k){ total += B[k]; });
+    return (2 * inter) / total;
+  }
+  function nums(s){
+    return String(s || "").match(/\d+(\.\d+)?/g) || [];
+  }
+  function draw(){
+    var a = $("dv-a").value, b = $("dv-b").value;
+    var th = Number($("dv-range").value);
+    $("dv-t").textContent = th.toFixed(2);
+    var sim = dice(a, b);
+    var same = sim >= th;
+    var na = nums(a).join(","), nb = nums(b).join(",");
+    var numLine = na !== nb
+      ? "숫자가 " + (na || "없음") + "에서 " + (nb || "없음") + "로 달라요. 같은 문장으로 묶이면 숫자 변화 줄에 함께 올라갑니다."
+      : "숫자는 같아요.";
+    out.innerHTML = "유사도 " + sim.toFixed(3) + "이고 기준값 " + th.toFixed(2) + "보다 " +
+      (same ? "높아서 같은 문장으로 묶여요." : "낮아서 다른 문장으로 남아요.") +
+      "<div class='muted' style='margin-top:6px;font-weight:400'>" + numLine + "</div>";
+  }
+  ["dv-a","dv-b"].forEach(function(id){ $(id).addEventListener("input", draw); });
+  $("dv-range").addEventListener("input", draw);
+  draw();
+})();
+
+</script>
 </body>
 </html>

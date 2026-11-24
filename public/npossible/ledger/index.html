@@ -139,6 +139,7 @@
     <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 장부 명세·운영 규칙</button>
     <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 검증·한계</button>
     <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 지난 라운드 반영</button>
+    <button role="tab" id="t7" aria-controls="p7" aria-selected="false">⑦ 이번 라운드 반영</button>
   </nav>
 </header>
 
@@ -489,11 +490,112 @@
     </ul>
   </div>
 </section>
+<section role="tabpanel" id="p7" aria-labelledby="t7" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>이번 라운드에서 받은 반응과 바꾼 것</h2>
+    <p class="small muted">사용자 패널 둘, 리뷰어, 운영감사가 남긴 문장과 그에 대응해 바꾼 것이에요. 숫자를 셀 수 없는 것은 셀 수 없다고 적는 쪽으로 고쳤습니다.</p>
+    <table>
+      <thead><tr><th style="width:36%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>파워유저 “장부까지 한눈에 보기엔 정보가 좀 많아 보여요”</td>
+          <td>장부를 요약 한 줄로 접고 펼치는 상자를 넣었어요. 처음에는 마지막 기록 한 줄과 건수만 보여 주고, 펼치면 전부 나와요.</td>
+        </tr>
+        <tr>
+          <td>리뷰어 “열람과 기기 간 충돌은 시뮬레이션으로만 제시됐고, 스크랩과 검색 캐시 잔존 수치의 산정 근거도 설명하지 않았다”</td>
+          <td>좁힐 때 나오는 문장에서 스크랩과 캐시 숫자를 뺐어요. 셀 수 없어서 남을 수 있다고만 말하고, 이미 본 사람 수만 이 브라우저에서 센 값으로 보여 줘요. 본문 아래 표에 무엇이 실측이고 무엇이 추정인지 적었습니다.</td>
+        </tr>
+        <tr>
+          <td>운영감사 “열람자 집계와 변경 이력의 보관 기준이 필요하고, 외부 스크랩과 검색 캐시는 정확한 수치를 보장하기 어렵다”</td>
+          <td>보관 기준 표를 넣었어요. 장부 보관 기간, 열람자 집계 방식, 누가 볼 수 있는지 적었어요. 실제 서버에 붙인 값이 아니라 운영 규칙으로 정한 값이에요.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:16px">
+    <div class="card pad">
+      <h2 style="font-size:15px">장부 접기</h2>
+      <p class="tiny muted">기록이 쌓일수록 표가 길어져요. 접었을 때는 마지막 기록과 건수만 보여 주고, 펼치면 전부 나와요. 이 상자에서 직접 눌러 볼 수 있어요.</p>
+      <div class="row" style="margin-top:0">
+        <button class="btn ghost" id="lv-fold" style="font-size:12.5px">접기</button>
+        <button class="btn ghost" id="lv-open" style="font-size:12.5px">펼치기</button>
+      </div>
+      <div id="lv-box" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card pad">
+      <h2 style="font-size:15px">무엇이 실측이고 무엇이 추정인가</h2>
+      <table>
+        <thead><tr><th>값</th><th>어떻게 아나</th></tr></thead>
+        <tbody>
+          <tr><td>이미 본 사람 수</td><td>이 브라우저에서 누른 시뮬레이션 횟수. 실제 서비스에서는 조회 기록에서 센다.</td></tr>
+          <tr><td>스크랩 여부</td><td>셀 수 없어요. 남을 수 있다고만 말한다.</td></tr>
+          <tr><td>검색 캐시</td><td>반영까지 걸리는 시간은 색인 정책에 달려 있어 이 화면에서는 숫자를 말하지 않는다.</td></tr>
+          <tr><td>다른 기기 값</td><td>이 페이지에서는 시뮬레이션이다. 실제 서버 응답이 아니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card pad" style="grid-column:1/-1">
+      <h2 style="font-size:15px">장부 보관 기준</h2>
+      <table>
+        <thead><tr><th>항목</th><th>기준</th><th>비고</th></tr></thead>
+        <tbody>
+          <tr><td>기록 보관</td><td>글당 최근 30건 또는 90일 중 먼저 닿는 쪽</td><td>넘으면 오래된 기록부터 접고, 글 단위 요약 한 줄은 남김</td></tr>
+          <tr><td>열람자 집계</td><td>사람 수만 세고 누가 봤는지는 저장하지 않음</td><td>개인정보를 만들지 않기 위한 선택</td></tr>
+          <tr><td>볼 수 있는 사람</td><td>작성자만</td><td>운영 점검은 건수만 본다</td></tr>
+          <tr><td>검색 색인</td><td>범위를 좁히면 색인 제외 요청을 남김</td><td>반영 시각은 보장하지 않음</td></tr>
+        </tbody>
+      </table>
+      <p class="tiny muted" style="margin-top:10px">이 표는 규칙으로 정한 값이고, 실제 판 서버에 붙여 확인한 값이 아니에요.</p>
+    </div>
+  </div>
+</section>
+
 
 </main>
 <footer class="page">
   sun-pickle · 미션 pan · 원작 포크(regex-riot) · 글·자료 CC BY-SA 4.0, 코드 GPL-3.0 · 예시 인물·수치는 창작이며 실제 서비스 화면이 아닙니다. 개인정보 없음.
 </footer>
 <script src="script.js?v=afe9b4f3"></script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var box = $("lv-box");
+  if(!box) return;
+
+  var REV = [
+    {rev:1, at:"10:02", from:"이웃 공개", to:"이웃 공개", where:"쓰기 화면", seen:0},
+    {rev:2, at:"10:07", from:"이웃 공개", to:"전체 공개", where:"올린 뒤 바꾸기", seen:1},
+    {rev:3, at:"10:09", from:"전체 공개", to:"나만 보기", where:"올린 뒤 바꾸기", seen:2},
+    {rev:4, at:"10:14", from:"나만 보기", to:"나만 보기", where:"수정 화면 저장", seen:2}
+  ];
+  var open = false;
+
+  function draw(){
+    var last = REV[REV.length - 1];
+    var html = "<div style='border:1px solid var(--line);border-radius:11px;padding:10px 12px'>" +
+      "<div style='font-size:13px;font-weight:800'>기록 " + REV.length + "건, 마지막은 " + last.at + "</div>" +
+      "<div class='tiny muted' style='margin-top:4px'>" + last.from + "에서 " + last.to + ", " + last.where + ", 그때 본 사람 " + last.seen + "명</div>";
+    if(open){
+      html += "<table style='margin-top:10px'><thead><tr><th>rev</th><th>시각</th><th>이전</th><th>이후</th><th>바꾼 곳</th><th>그때 본 사람</th></tr></thead><tbody>";
+      REV.forEach(function(r){
+        html += "<tr><td>" + r.rev + "</td><td>" + r.at + "</td><td>" + r.from + "</td><td>" + r.to + "</td><td>" + r.where + "</td><td>" + r.seen + "명</td></tr>";
+      });
+      html += "</tbody></table>";
+      html += "<div class='tiny muted' style='margin-top:8px'>펼친 표에는 시각과 바꾼 곳과 그때 본 사람 수가 함께 들어가요.</div>";
+    }
+    html += "</div>";
+    box.innerHTML = html;
+  }
+
+  $("lv-fold").addEventListener("click", function(){ open = false; draw(); });
+  $("lv-open").addEventListener("click", function(){ open = true; draw(); });
+  draw();
+})();
+
+</script>
 </body>
 </html>

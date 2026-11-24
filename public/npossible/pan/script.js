@@ -330,7 +330,7 @@
     });
   }
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"]];
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"],["t7","p7"]];
   function selectTab(id){
     tabs.forEach(function(pair){
       var on = pair[0]===id;

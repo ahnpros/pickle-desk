@@ -241,7 +241,7 @@
     var narrowing = rank[toScope] < rank[fromScope];
     if (S.seen > 0) {
       items.push("이미 본 <b>" + S.seen + "명</b>의 화면·알림은 그대로 남습니다. 그 사람이 다시 열 수는 없지만, 이미 읽은 내용은 되돌아오지 않습니다.");
-      items.push("그중 <b>" + Math.max(1, Math.ceil(S.seen / 3)) + "명</b>이 스크랩하거나 공유 링크를 복사했다고 가정하면, 그 링크는 새 범위의 적용을 받지 않습니다. (예시 값)");
+      items.push("스크랩과 공유 링크는 셀 수 없어요. 복사된 링크가 있다면 그 링크는 새 범위의 적용을 받지 않습니다. 숫자로 말하지 않는 이유는 셀 수 없기 때문이에요.");
     }
     if (fromScope === "public" || (narrowing && fromScope === "public")) {
       items.push("검색 결과·캐시는 <b>최대 10분</b> 뒤에 바뀝니다. 그 사이에는 검색으로 계속 열릴 수 있습니다.");

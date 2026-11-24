@@ -45,7 +45,7 @@
     {
       id:"n4", from:"이벤트안내", initial:"이", time:"오늘 07:12",
       rel:{label:"처음 보는 사람 · 최근 7일 같은 발신자 3건", tone:"a"},
-      why:{text:"왜 왔는지 확인할 수 없어요 · 오늘", tone:"a"},
+      why:{text:"왜 왔는지 확인할 수 없어요, 스팸이라는 뜻은 아님 · 오늘", tone:"a"},
       preview:"회원님께 특별 혜택을 드립니다. 아래 링크에서 확인해 주세요…",
       body:"안녕하세요! 회원님께 특별 혜택을 드립니다. 아래 링크에서 확인해 주세요. [링크] event-2026…(접힘)",
       chain:[
@@ -94,7 +94,7 @@
       html += '<div class="body" id="body-'+n.id+'" '+(open?"":"hidden")+'>';
       html += '<p style="font-size:13.5px;margin:10px 0 0">'+n.body+'</p>';
       if(n.risky){
-        html += '<div class="warnbox"><b>링크가 든 쪽지예요.</b> 누르기 전에 주소를 확인하세요. 이 쪽지는 경로가 남아 있지 않아 <b>왜 왔는지 확인할 수 없습니다</b>. 같은 발신자에게서 최근 7일간 3건이 왔어요.</div>';
+        html += '<div class="warnbox"><b>링크가 든 쪽지예요.</b> 누르기 전에 주소를 확인하세요. 이 쪽지는 경로가 남아 있지 않아 <b>왜 왔는지 확인할 수 없습니다</b>. 경로가 없다고 스팸이라는 뜻은 아니에요. 링크 주소를 먼저 확인하세요. 같은 발신자에게서 최근 7일간 3건이 왔어요.</div>';
       }
       html += '<ul class="chain" aria-label="왜 왔는지 경로">';
       n.chain.forEach(function(c){
@@ -194,7 +194,7 @@
     }
   });
 
-  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"]];
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"],["t7","p7"]];
   function selectTab(id){
     tabs.forEach(function(p){
       var on = p[0]===id;
