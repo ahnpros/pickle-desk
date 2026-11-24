@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>어제 기사와 오늘 기사, 달라진 문장만 | sun-pickle</title>
+<meta name="description" content="이어지는 사건의 기사 사이에서 새로 밝혀진 문장·숫자가 바뀐 곳·빠진 내용만 남겨 보는 프로토타입. 차이는 브라우저에서 실제로 계산합니다.">
+<style>
+  :root{
+    --bg:#f6f7f8; --card:#fff; --ink:#15181d; --muted:#5b6371; --line:#e2e6ea;
+    --green:#03c75a; --green-soft:#e9f8f0; --green-ink:#0b6b3a;
+    --warn:#a2520b; --warn-soft:#fff5e8; --warn-line:#f0c48a;
+    --red:#b3261e; --red-soft:#fdeceb;
+    --blue:#0b5cc4; --blue-soft:#eaf1fd;
+    --focus:#1a4fd6; --shadow:0 1px 2px rgba(16,24,40,.06),0 10px 30px -18px rgba(16,24,40,.25);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.62 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:#0a5a33}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 18px 80px}
+  header.top{background:#fff;border-bottom:1px solid var(--line)}
+  .top-in{max-width:1080px;margin:0 auto;padding:18px 18px 14px}
+  .kicker{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  h1{font-size:25px;line-height:1.3;margin:6px 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  nav.tabs{max-width:1080px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow:auto}
+  nav.tabs button{border:0;background:none;padding:13px 11px;font:inherit;font-weight:600;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;font-size:13.5px}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--green)}
+  nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:8px 8px 0 0}
+  section[role="tabpanel"][hidden]{display:none}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+  h2{font-size:17px;margin:0 0 10px;letter-spacing:-.01em}
+  h3{font-size:14px;margin:18px 0 6px}
+  p{margin:0 0 10px}
+  ul,ol{margin:0 0 10px;padding-left:20px}
+  li{margin:4px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+  .tiny{font-size:12px}
+  code{background:#f1f3f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  pre{background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:12.5px;line-height:1.55}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:700;font-size:12.5px;color:#39414f}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800}
+  .pill.g{background:var(--green-soft);color:var(--green-ink)}
+  .pill.w{background:var(--warn-soft);color:var(--warn)}
+  .pill.n{background:#eef1f5;color:#3d4552}
+  .pill.r{background:var(--red-soft);color:var(--red)}
+  .pill.b{background:var(--blue-soft);color:var(--blue)}
+  .skip{position:absolute;left:-9999px;top:0;background:#fff;padding:10px 14px;border:2px solid var(--focus);border-radius:0 0 8px 0;z-index:50}
+  .skip:focus{left:0}
+
+  .controls{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+  @media (max-width:720px){.controls{grid-template-columns:1fr}}
+  .field label{display:block;font-size:12.5px;font-weight:800;color:#39414f;margin-bottom:5px}
+  .field select{width:100%;border:1px solid #d4dae1;border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;background:#fff}
+  .field select:focus{outline:2px solid var(--focus);outline-offset:1px}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink)}
+  .btn:hover{border-color:#b9c3cf}
+  .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .btn.on{background:var(--green-soft);border-color:var(--green);color:var(--green-ink)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+  .chip{border-radius:12px;padding:10px 12px;border:1px solid var(--line);background:#fbfcfd;min-width:112px}
+  .chip b{display:block;font-size:20px;line-height:1.15;font-variant-numeric:tabular-nums}
+  .chip span{font-size:12px;color:var(--muted);font-weight:700}
+  .chip.add{border-color:#bfe7ce;background:var(--green-soft)}
+  .chip.chg{border-color:#c9d8f4;background:var(--blue-soft)}
+  .chip.rem{border-color:#e9c0bc;background:var(--red-soft)}
+  .chip.fix{border-color:#d9c4ea;background:#f6eefc}
+  ol.diff>li.fix{border-left-color:#7a3ea8}
+  ol.diff li.fix .badge{background:#f6eefc;color:#6b2f96}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:8px 0 0}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:1px}
+  ol.diff{list-style:none;padding:0;margin:12px 0 0}
+  ol.diff>li{border:1px solid var(--line);border-left-width:4px;border-radius:10px;padding:11px 13px;margin:0 0 9px;background:#fff}
+  ol.diff>li.add{border-left-color:var(--green)}
+  ol.diff>li.chg{border-left-color:#3f7fe0}
+  ol.diff>li.rem{border-left-color:#c0392b}
+  ol.diff>li.same{border-left-color:#c7cfd9;background:#fbfcfd}
+  ol.diff .badge{font-size:11px;font-weight:900;letter-spacing:.02em;border-radius:6px;padding:1px 7px;margin-right:7px;white-space:nowrap}
+  ol.diff li.add .badge{background:var(--green-soft);color:var(--green-ink)}
+  ol.diff li.chg .badge{background:var(--blue-soft);color:var(--blue)}
+  ol.diff li.rem .badge{background:var(--red-soft);color:var(--red)}
+  ol.diff li.same .badge{background:#eef1f5;color:#3d4552}
+  ol.diff p{margin:6px 0 0;font-size:14.5px}
+  ol.diff .old{font-size:13px;color:#7a828f;margin-top:6px}
+  ol.diff .old s{text-decoration-thickness:1px}
+  ol.diff .meta{font-size:11.5px;color:var(--muted);margin-top:6px}
+  mark{background:#fff0b3;padding:0 2px;border-radius:3px}
+  .readmark{border:1px dashed #b8c2cf;border-radius:10px;padding:10px 12px;font-size:12.5px;background:#fff;margin:10px 0}
+  .live{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  footer.page{max-width:1080px;margin:0 auto;padding:8px 18px 60px;color:var(--muted);font-size:12.5px}
+  .numtable td{font-variant-numeric:tabular-nums}
+  .numtable b{font-size:15px}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">본문 바로가기</a>
+<header class="top">
+  <div class="top-in">
+    <div class="kicker">sun-pickle · 제안 미션 · 같은 사건, 어제 기사와 오늘 기사</div>
+    <h1>어제 기사와 오늘 기사, 달라진 문장만</h1>
+    <p class="sub">이어지는 사건의 기사 3건을 문장 단위로 대조합니다. <b>새로 밝혀진 문장</b>, <b>숫자가 바뀐 문장</b>, <b>빠진 문장</b>을 화면에 미리 적어 둔 라벨이 아니라 브라우저에서 실제로 계산해 보여 줍니다.</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="출품물 섹션">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">① 체험 (실제 대조)</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 왜 필요한가</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 동작 방식·명세</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 검증·한계</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 지난 라운드 반영</button>
+    <button role="tab" id="t7" aria-controls="p7" aria-selected="false">⑦ 이번 라운드 반영</button>
+  </nav>
+</header>
+
+<main id="main" class="wrap">
+
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+  <div class="card">
+    <h2>무엇과 무엇을 비교할까요</h2>
+    <div class="controls">
+      <div class="field">
+        <label for="selBase">기준 기사 (읽었던 것)</label>
+        <select id="selBase"></select>
+      </div>
+      <div class="field">
+        <label for="selNew">비교 기사 (지금 것)</label>
+        <select id="selNew"></select>
+      </div>
+      <div class="field">
+        <label>보기</label>
+        <button type="button" class="btn" id="btnAll" aria-pressed="false">바뀐 것만 보기</button>
+      </div>
+    </div>
+
+    <div class="chips" aria-hidden="true">
+      <div class="chip add"><b id="cAdd">0</b><span>이전 기사에 없던 문장</span></div>
+      <div class="chip chg"><b id="cChg">0</b><span>문장이 바뀜</span></div>
+      <div class="chip rem"><b id="cRem">0</b><span>빠짐</span></div>
+      <div class="chip fix"><b id="cFix">0</b><span>정정 표시</span></div>
+      <div class="chip"><b id="cSame">0</b><span>그대로</span></div>
+      <div class="chip"><b id="cNum">0</b><span>숫자 변화</span></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:#03c75a"></i>새 문장</span>
+      <span><i style="background:#3f7fe0"></i>같은 문장이 바뀜</span>
+      <span><i style="background:#c0392b"></i>빠짐(정정 여부는 모름)</span>
+      <span><i style="background:#7a3ea8"></i>기사가 정정이라고 밝힌 문장</span>
+      <span>숫자가 바뀐 곳은 <mark>이렇게</mark> 표시합니다</span>
+    </div>
+    <p class="readmark" id="readMark" hidden></p>
+    <p class="live" id="live" aria-live="polite"></p>
+  </div>
+
+  <div class="card" id="diffCard">
+    <h2 id="diffHeading" tabindex="-1">달라진 문장</h2>
+    <p class="small muted" id="diffSub">—</p>
+    <ol class="diff" id="diffList"></ol>
+    <div class="readmark">
+      <button type="button" class="btn" id="btnReadAll">여기까지 읽었어요 (다음에 이 자리부터)</button>
+      <span class="tiny muted" id="readSaved"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>같은 문장인지 애매한 짝</h2>
+    <p class="small muted" style="margin-top:-4px">사실을 판정하지 않습니다. 위 칸의 이름은 이전 기사에 그 문장이 없었다는 뜻이고, 새 사실이라는 뜻은 아니에요. 문장 짝짓기는 유사도 0.5를 기준으로 합니다. 그 경계(0.35–0.72)에 걸린 짝만 모았습니다 — 이 줄들은 ‘같은 문장인지 다른 문장인지’ 기계적으로 확신하기 어려운 경우입니다. 그래서 이 화면은 이 줄들을 확신하지 않고 그대로 보여 주고, 짝지어진 것과 아닌 것을 함께 적습니다.</p>
+    <table>
+      <thead><tr><th>이전 기사</th><th>지금 기사</th><th>유사도</th><th>판정</th></tr></thead>
+      <tbody id="edgeBody"><tr><td colspan="4" class="muted small">경계에 걸린 짝이 없습니다.</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>숫자만 따로</h2>
+    <p class="small muted" style="margin-top:-4px">같은 문장으로 짝지어진 곳에서 숫자가 달라진 경우만 모았습니다. 인원·시간·횟수처럼 판단을 바꾸는 값부터 봅니다.</p>
+    <table class="numtable">
+      <thead><tr><th>항목</th><th>이전 기사</th><th>지금 기사</th><th>문장</th></tr></thead>
+      <tbody id="numBody"><tr><td colspan="4" class="muted small">숫자가 바뀐 문장이 없습니다.</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+  <div class="card">
+    <h2>제안자가 적은 문제</h2>
+    <blockquote style="margin:0;padding:12px 14px;background:#fbfcfd;border-left:4px solid var(--green);border-radius:0 10px 10px 0">
+      “사건이 이어지는 뉴스에서 어제 읽은 기사와 오늘 기사의 차이가 안 보여서, 뭐가 새로 밝혀졌는지 알려면 두 기사를 번갈아 비교해야 해요.”
+    </blockquote>
+    <h3>번갈아 읽는 비용보다 큰 것</h3>
+    <p class="small">두 기사를 나란히 놓는 일은 귀찮지만, 실제로 더 위험한 경우는 <b>바뀐 것을 모른 채 이전 기사 기준으로 판단하는 것</b>입니다. 이어지는 사건에서 자주 바뀌는 것은 세 가지입니다.</p>
+    <table>
+      <thead><tr><th>바뀌는 것</th><th>독자에게 생기는 일</th><th>이 화면이 하는 일</th></tr></thead>
+      <tbody>
+        <tr><td><b>숫자</b> — 인원·시간·횟수</td><td>“피해 없음”으로 읽고 넘긴 사람이 이후 기사를 안 읽음</td><td>짝지어진 문장에서 숫자만 뽑아 이전→지금을 나란히</td></tr>
+        <tr><td><b>새 사실</b> — 수사 진행·원인</td><td>어제 기사에 없던 내용을 오늘 처음 알게 됨</td><td>이전 기사에 없는 문장을 ‘새로 밝혀짐’으로</td></tr>
+        <tr><td><b>빠진 내용·정정</b></td><td>철회된 단정을 계속 사실로 기억함</td><td>이전 기사에만 있는 문장을 ‘빠짐·정정’으로 남김</td></tr>
+      </tbody>
+    </table>
+    <h3>왜 요약이 아니라 ‘문장 차이’인가</h3>
+    <p class="small">요약은 누가 요약했느냐에 따라 달라지고, 요약된 문장은 원문에 없던 판단을 넣기 쉽습니다. 반면 문장 대조는 <b>양쪽 기사에 실제로 있는 문장만</b> 다룹니다. 대신 이 화면은 “무엇이 사실인가”를 판정하지 않습니다. 문장이 달라졌다는 사실만 말하고, 판단은 읽는 사람에게 남깁니다.</p>
+    <h3>같은 문제를 다룬 다른 출품과의 차이</h3>
+    <ul class="small">
+      <li>이 화면은 기사를 <b>요약하지 않습니다.</b> 양쪽 기사 문장을 그대로 두고 짝만 지어 줍니다.</li>
+      <li>차이를 <b>화면에 적어 두지 않습니다.</b> 기사 글자를 바꾸면 표시도 함께 바뀝니다(직접 확인 가능).</li>
+      <li>‘읽던 자리’를 남겨, 다음에 같은 사건으로 돌아왔을 때 어디부터 새로 읽으면 되는지 알려 줍니다.</li>
+    </ul>
+  </div>
+</section>
+
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+  <div class="card">
+    <h2>문장 짝짓기 — 규칙만으로, 브라우저에서</h2>
+    <ol class="small">
+      <li>기사 본문을 <b>문장 단위</b>로 나눕니다. 이 프로토타입의 자료는 문장이 줄 단위로 들어 있어 나누기 오류가 없지만, 실제 서비스에서는 문장 분리기를 따로 둡니다.</li>
+      <li>문장에서 공백·문장부호를 지우고 <b>두 글자 묶음(바이그램)</b>을 만듭니다. 한국어는 어미가 붙어도 앞부분이 겹쳐서, 단어 사전 없이도 같은 문장을 찾아냅니다.</li>
+      <li>두 기사의 모든 문장 짝에 대해 <b>다이스 유사도</b>를 계산하고, 높은 순서로 <b>1:1</b> 짝을 짓습니다(한 문장이 두 번 쓰이지 않음).</li>
+      <li>유사도 <code>0.5</code> 이상이면 같은 문장으로 보고, <code>0.94</code> 미만이면 ‘바뀜’, 그 이상이면 ‘그대로’로 봅니다. 짝이 없는 새 기사 문장은 ‘새로 밝혀짐’, 짝이 없는 이전 기사 문장은 ‘빠짐’입니다.</li>
+      <li>‘정정’은 문장 차이로 <b>추정하지 않습니다</b>. 새 기사 문장에 ‘정정·바로잡·철회·앞서 보도’ 같은 표시가 있을 때만 ‘정정’으로 따로 표시하고, ‘빠짐’을 ‘정정’으로 승격하지 않습니다(v2에서 바뀐 부분).</li>
+      <li>짝지어진 문장 안에서 <b>숫자+단위</b>(예: 5명, 3시간, 2층)를 뽑아 양쪽을 비교합니다. 값이나 단위가 다르면 숫자 변화로 따로 모읍니다.</li>
+      <li>각 문장에는 자료에 적힌 <b>출처 표기</b>(소방·경찰·병원·창고 측)가 붙습니다. 이 화면은 출처를 판정하지 않고, 기사에 적힌 표기를 그대로 옮깁니다.</li>
+    </ol>
+    <h3>기준값을 바꾸면 결과가 어떻게 달라지나</h3>
+    <pre><code>// 지금 페이지에서 실제로 쓰는 값
+MATCH_MIN = 0.5    // 이 아래는 '다른 문장'으로 본다
+SAME_MIN  = 0.94   // 이 위는 '그대로'로 본다
+// 조정 예: MATCH_MIN 을 0.6 으로 올리면
+//   같은 사실을 짧게 다시 쓴 문장이 '빠짐 + 새 문장' 두 줄로 갈라진다.
+//   → 거짓 '빠짐'이 늘어난다. 0.45 로 내리면
+//   → 서로 다른 사건 문장이 짝지어져 '바뀜'으로 뭉친다. (실제로 0.45에서는
+//     '인명 피해가 없다'와 '3시간 만에 꺼졌다'가 짝지어졌습니다)</code></pre>
+    <h3>실제 서비스로 옮길 때 필요한 것</h3>
+    <table>
+      <thead><tr><th>필요한 것</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr><td>기사 <b>개정 이력</b> 보관(문장 단위 버전)</td><td>지금 화면은 기사 3건을 비교하지만, 실제로는 같은 URL의 기사가 수정되는 경우가 더 많습니다. 문장 id가 있어야 ‘무엇이 바뀌었나’를 안정적으로 말할 수 있습니다.</td></tr>
+        <tr><td>같은 사건 묶기(사건 id)</td><td>비교 대상을 무엇으로 잡을지가 먼저 정해져야 합니다. 이 화면은 예시로 묶인 3건을 씁니다.</td></tr>
+        <tr><td>정정 표시 수집</td><td>‘정정’은 문장 차이만으로는 알 수 없습니다. 기사에 붙는 정정 고지나 편집국 메타데이터가 있어야 정확해집니다.</td></tr>
+        <tr><td>서버 계산 + 캐시</td><td>문장 수가 많아지면 브라우저 계산은 느려집니다. 사건별로 미리 계산해 두고, 새 기사가 들어올 때 갱신하는 편이 맞습니다.</td></tr>
+      </tbody>
+    </table>
+    <h3>이벤트 (배포하면 이렇게 잽니다)</h3>
+    <table>
+      <thead><tr><th>이벤트</th><th>무엇을 아는가</th></tr></thead>
+      <tbody>
+        <tr><td><code>diff_view</code></td><td>사건·기준 기사·비교 기사·변경 개수. 어떤 사건에서 차이가 자주 생기는지.</td></tr>
+        <tr><td><code>num_focus</code></td><td>숫자 표를 연 비율. 숫자가 판단을 바꾸는 사건에서 이 화면이 실제로 쓰이는지.</td></tr>
+        <tr><td><code>read_resume</code></td><td>읽던 자리에서 이어 읽은 비율. 이어지는 사건을 다시 찾아오는 사람이 있는지.</td></tr>
+        <tr><td><code>diff_bounce</code></td><td>차이를 보고 원문으로 넘어간 비율. 차이만으로는 부족한 경우를 드러냄.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+  <div class="card">
+    <h2>무엇이 확인되고, 무엇이 아직 아닌가</h2>
+    <h3>1) 이 페이지에서 실제로 확인되는 것</h3>
+    <ul class="small">
+      <li>비교 기사를 바꾸면 <b>차이가 다시 계산</b>됩니다. 위 숫자(새 문장·바뀜·빠짐)는 고정값이 아니라 그 계산의 결과입니다.</li>
+      <li>문장을 고치면 판정이 따라 바뀝니다 — 예를 들어 ‘5명’을 ‘2명’으로 되돌리면 숫자 변화 표에서 사라집니다.</li>
+      <li>숫자가 바뀐 문장은 숫자만 표시되고, 나머지 문장은 그대로 남습니다.</li>
+      <li>‘여기까지 읽었어요’를 누르면 다음에 같은 사건으로 돌아왔을 때 그 자리를 알려 줍니다(이 브라우저 기준).</li>
+      <li>키보드만으로 기사 선택·보기 전환·이어 읽기가 됩니다. 요약 개수는 <code>aria-live</code>로 읽힙니다.</li>
+    </ul>
+    <h3>2) 아직 아닌 것</h3>
+    <ul class="small">
+      <li><b>실제 기사가 아닙니다.</b> 세 기사는 이 화면을 보여 주기 위해 쓴 예시이고, 인물·기관·사건은 창작입니다.</li>
+      <li><b>사실 검증이 아닙니다.</b> “새로 밝혀짐”은 ‘이전 기사에 그 문장(과 비슷한 문장)이 없었다’는 뜻일 뿐입니다. 새 사실인지, 다른 취재원이 다른 말을 한 것인지는 판정하지 않습니다.</li>
+      <li><b>같은 사실을 다르게 쓴 문장</b>은 ‘바뀜’이나 ‘빠짐+새 문장’으로 보일 수 있습니다. 이 한계는 유사도 기준값 조정으로 줄일 수는 있어도 없앨 수 없습니다.</li>
+      <li><b>실제 네이트 뉴스에 붙어 있지 않습니다.</b> 사건 묶기·기사 수집·정정 고지는 서버 쪽 일이고, 이 프로토타입은 그 자리를 예시 자료로 대신합니다.</li>
+      <li><b>사용자 반응을 받지 않았습니다.</b> 이 화면이 실제로 오해를 줄이는지는 배포 후 지표로만 알 수 있습니다.</li>
+    </ul>
+    <h3>3) 배포하면 이렇게 검증하겠습니다</h3>
+    <table>
+      <thead><tr><th>가설</th><th>지표</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td>숫자 변화를 먼저 보여 주면 잘못된 판단이 줄어든다</td><td>숫자가 바뀐 사건에서 <code>num_focus</code> 비율, 원문 체류</td><td>숫자 변화가 있는 사건에서 원문 체류가 유의미하게 늘면 채택</td></tr>
+        <tr><td>차이 보기가 ‘번갈아 읽기’를 줄인다</td><td>사건당 기사 열람 수, <code>diff_view</code> 후 이탈</td><td>기사 열람 수 감소 + 이탈률 악화 없음</td></tr>
+        <tr><td>이어 읽기가 재방문을 만든다</td><td>사건별 7일 재방문, <code>read_resume</code></td><td>재방문 증가</td></tr>
+        <tr><td>오탐(다르게 쓴 같은 사실)이 신뢰를 깎지 않는다</td><td>‘잘못 짚었다’ 신고율</td><td>1% 미만이면 기준값 유지</td></tr>
+      </tbody>
+    </table>
+    <h3>4) 운영 비용 (v2 추가)</h3>
+    <p class="small">운영 심사가 지적한 “기사 수집·버전 보관·사건 묶기가 운영 부담이고, 빠짐을 정정으로 묶으면 검수·민원 비용이 생긴다”에 대한 항목입니다.</p>
+    <table>
+      <thead><tr><th>항목</th><th>정한 기준</th><th>비용을 줄이는 방법</th></tr></thead>
+      <tbody>
+        <tr><td>기사 수집</td><td>사건으로 묶인 기사만 수집(전체 기사 아님)</td><td>사건 묶기가 먼저 있고 대조는 그 안에서만 합니다. 대조 비용이 사건 수에 비례합니다.</td></tr>
+        <tr><td>버전 보관</td><td>문장 단위 스냅숏 90일, 사건 종결 후 요약 1건만 남김</td><td>오래된 사건은 계산된 차이만 보관하고 원문 문장은 지웁니다.</td></tr>
+        <tr><td>사건 묶기 오류</td><td>다른 사건이 섞이면 차이 대부분이 ‘새 문장 + 빠짐’으로 나옴</td><td>그 패턴을 묶기 오류 신호로 삼아 자동 보류하고, 사람이 확인할 목록으로 보냅니다.</td></tr>
+        <tr><td>정정 표시</td><td>기사 본문에 정정·철회 표시가 있을 때만 ‘정정’으로 표시. 빠짐은 정정으로 <b>승격하지 않음</b></td><td>오분류 민원의 큰 부분(누락을 정정으로 오해)을 라벨 단계에서 없앱니다. 표시가 없는 정정은 잡지 못한다는 한계는 남습니다.</td></tr>
+      </tbody>
+    </table>
+    <h3>5) 접근성</h3>
+    <ul class="small">
+      <li>색만으로 구분하지 않습니다 — 각 줄에 ‘새로 밝혀짐 / 바뀜 / 빠짐’ 글자 배지가 붙습니다.</li>
+      <li>비교를 바꾸면 “새 문장 3, 바뀐 문장 2, 빠진 문장 1”을 <code>aria-live</code>로 읽습니다.</li>
+      <li>표는 머리글과 함께 읽히고, 숫자 변화는 ‘이전 기사 2명, 지금 기사 5명’처럼 문장으로도 적습니다.</li>
+      <li>움직임·색 대비를 낮추는 설정에서도 읽히도록 배지와 밑줄을 함께 씁니다.</li>
+    </ul>
+    <h3>6) 남는 위험</h3>
+    <ul class="small">
+      <li>문장 대조는 <b>기사가 통째로 다시 쓰인 경우</b>에 거의 전부 ‘새 문장 + 빠짐’으로 보입니다. 그때는 ‘달라진 문장이 많다 = 기사가 새로 쓰였다’는 신호로만 쓸 수 있습니다.</li>
+      <li>출처 표기는 기사에 적힌 그대로라, 실제로 취재원이 말한 내용과 다를 수 있습니다.</li>
+      <li>“정정”을 문장 차이로 추정하면 오탐이 생깁니다. v1은 그래서 빠짐과 정정을 묶었는데, <b>v2에서는 묶지 않습니다</b>. 빠짐은 빠짐으로만 표시하고, 새 기사에 정정·철회 표시가 있을 때만 ‘정정’을 따로 씽니다. 표시가 없는 정정은 잡지 못한다는 한계는 남습니다.</li>
+    </ul>
+  </div>
+</section>
+
+<section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
+  <div class="card">
+    <h2>v1에서 받은 반응 → v2에서 바꾼 것</h2>
+    <p class="small muted">사용자 패널 둘·리뷰어·운영이 같은 지점을 찔렀습니다 — ‘빠짐’과 ‘정정’을 한 라벨로 묶은 것.</p>
+    <table>
+      <thead><tr><th>반응</th><th>v2에서 바꾼 것</th><th>확인 방법</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>“오늘 기사에서 빠진 내용이 꼭 정정된 건 아니니, <b>‘빠짐’과 ‘정정’은 따로 표시</b>해 주면 좋겠어요.” (사용자 패널 둘)</td>
+          <td>라벨을 나눴습니다. 빠진 문장은 <b>‘빠짐’</b>으로만 표시하고 “정정인지 단순 누락인지 이 화면은 판단하지 않습니다”를 붙였습니다. <b>‘정정’</b>은 새 기사 본문에 정정·바로잡·철회·앞서 보도 같은 표시가 있을 때만 따로 표시합니다.</td>
+          <td>① 탭 맨 아래‘빠짐’ 줄과 ‘정정’ 줄을 나란히 확인 (기본 비교에서 빠짐 1·정정 1)</td>
+        </tr>
+        <tr>
+          <td>“창작 기사 3건에서 오탐 한 사례를 보고 정한 임계값만으로는 실제 기사에서 잘 짝지을지 알 수 없다.” (리뷰어)</td>
+          <td>임계값을 숨기지 않고 <b>경계 사례 표</b>를 붙였습니다. 유사도 0.35–0.65에 걸린 문장 짝을 전부 보여 주고, 그 짝이 짝지어졌는지 아닌지 함께 적습니다. 판단을 감추지 않고 검수 대상으로 내놓는 쪽을 골랐습니다.</td>
+          <td>① 탭 ‘임계값 경계에 있는 문장’ 표</td>
+        </tr>
+        <tr>
+          <td>“기사 수집·버전 보관·사건 묶기가 운영 부담이고, 정정 오분류 검수·민원 비용이 생긴다.” (운영)</td>
+          <td>④ 탭에 <b>운영 비용 표</b>를 넣었습니다: 사건 단위 수집, 문장 스냅샷 90일, 묶기 오류 신호 자동 보류, 정정 오분류를 라벨 단계에서 줄이기.</td>
+          <td>④ 탭 ‘운영 비용’</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>바꾸지 않은 것 (의도)</h3>
+    <ul class="small">
+      <li>요약하지 않습니다. 두 기사에 실제로 있는 문장만 다룹니다.</li>
+      <li>사실 검증을 하지 않습니다. ‘새로 밝혀짐’은 ‘이전 기사에 그 문장이 없었다’는 뜻입니다.</li>
+      <li>임계값은 0.5로 유지했습니다. 경계 사례를 보여 주는 쪽이 임계값을 더 조정하는 것보다 정직하다고 봤습니다.</li>
+    </ul>
+  </div>
+</section>
+<section role="tabpanel" id="p7" aria-labelledby="t7" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>이번 라운드에서 받은 반응과 바꾼 것</h2>
+    <p class="small muted">사용자 패널 둘, 리뷰어, 운영감사가 남긴 문장과 그에 대응해 바꾼 것이에요. 화면에 쓰는 말부터 풀었습니다.</p>
+    <table>
+      <thead><tr><th style="width:36%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>일반 사용자 “‘임계값 경계’는 좀 어려워서 ‘같은 문장인지 애매함’처럼 풀어 쓰면 더 이해하기 쉬울 것 같아요”</td>
+          <td>화면의 제목을 같은 문장인지 애매한 짝으로 바꿨어요. 요약 숫자 칸의 이름도 이전 기사에 없던 문장으로 바꿨습니다.</td>
+        </tr>
+        <tr>
+          <td>리뷰어 “‘새로 밝혀짐’은 단순히 추가된 문장을 확인된 사실로 오해하게 할 수 있다”</td>
+          <td>이름을 이전 기사에 없던 문장으로 바꾸고, 사실 판정이 아니라는 문장을 표 위에 붙였어요. 새 사실인지 다른 취재원이 다른 말을 한 것인지는 판정하지 않는다는 점도 함께 적었습니다.</td>
+        </tr>
+        <tr>
+          <td>리뷰어와 파워유저 “유사도 0.5가 실제 기사에서도 타당한지, 창작 예시 말고 실제 기사에서도 잘 맞는지 궁금하다”</td>
+          <td>기준값 시험 상자를 넣었어요. 문장 두 개를 붙여 넣고 기준값을 0.3에서 0.8까지 움직이면, 같은 문장으로 볼지 말지가 바뀌는 것을 볼 수 있어요. 실제 기사 문장으로 직접 넣어 볼 수 있습니다. 다만 실제 기사 묶음으로 채점한 값은 아니에요.</td>
+        </tr>
+        <tr>
+          <td>운영감사 “매체별 본문 수집과 이용 권한을 관리하고, 문장 비교가 잘못 연결되는 사례를 꾸준히 점검해야 한다”</td>
+          <td>기사 원문을 저장하지 않고 이 브라우저 안에서만 비교한다고 화면에 적었어요. 잘못 연결된 짝은 감추지 않고 애매한 짝 표에 남겨 둡니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>기준값 시험</h2>
+    <p class="tiny muted">문장 두 개를 넣으면 두 글자 묶음으로 유사도를 계산해요. 같은 방식이라 기준값을 어디에 두느냐에 따라 같은 문장으로 볼지가 달라지는 것을 직접 볼 수 있어요.</p>
+    <label class="tiny" style="font-weight:800" for="dv-a">이전 기사 문장</label>
+    <input id="dv-a" type="text" value="경찰은 피해자가 3명이라고 밝혔다." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px">
+    <label class="tiny" style="font-weight:800" for="dv-b">지금 기사 문장</label>
+    <input id="dv-b" type="text" value="경찰은 피해자가 5명이라고 밝혔다." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px">
+    <div class="tiny muted">기준값 <b id="dv-t">0.50</b></div>
+    <input id="dv-range" type="range" min="0.3" max="0.8" step="0.05" value="0.5" style="width:100%">
+    <div id="dv-out" class="tiny" style="margin-top:10px;font-weight:700"></div>
+  </div>
+</section>
+
+
+</main>
+<footer class="page">
+  sun-pickle · 제안 미션(같은 사건, 어제 기사와 오늘 기사) · 글·자료 CC BY-SA 4.0, 코드 GPL-3.0 · 기사·인물·기관은 예시로 쓴 창작이며 실제 보도가 아닙니다. 개인정보 없음.
+</footer>
+<script>
+/* 어제 기사와 오늘 기사, 달라진 문장만 — 문장 대조 프로토타입
+   의존성 없음. 대조는 이 브라우저에서 실제로 계산한다.
+   기사·인물·기관은 화면 시연을 위해 쓴 예시(창작)이며 실제 보도가 아니다. */
+(function () {
+  "use strict";
+
+  var MATCH_MIN = 0.5;  // 이 아래는 '다른 문장'
+  var SAME_MIN = 0.94;  // 이 위는 '그대로'
+
+  var ARTICLES = [
+    {
+      id: "day1",
+      stamp: "11/20 (금) 09:12",
+      outlet: "속보",
+      title: "가람동 물류창고에 불… 3시간 만에 진화",
+      sents: [
+        { t: "가람동 물류창고에서 오늘 아침 불이 나 3시간 만에 꺼졌다.", src: "소방" },
+        { t: "소방 당국은 인명 피해가 없다고 밝혔다.", src: "소방" },
+        { t: "불은 창고 2층에서 시작된 것으로 추정된다.", src: "소방" },
+        { t: "창고 측은 전기 설비 문제일 수 있다고 말했다.", src: "창고 측" },
+        { t: "주변 도로는 한때 통제됐다가 풀렸다.", src: "경찰" }
+      ]
+    },
+    {
+      id: "day2",
+      stamp: "11/21 (토) 08:40",
+      outlet: "종합",
+      title: "가람동 창고 화재… 연기 마신 2명 병원 이송",
+      sents: [
+        { t: "가람동 물류창고 화재로 연기를 마신 2명이 병원으로 옮겨졌다.", src: "소방" },
+        { t: "소방 당국은 불이 3시간 만에 꺼졌다고 밝혔다.", src: "소방" },
+        { t: "불은 창고 2층에서 시작된 것으로 추정된다.", src: "소방" },
+        { t: "경찰은 창고 관계자 3명을 상대로 조사를 시작했다.", src: "경찰" },
+        { t: "창고 측은 전기 설비 문제일 수 있다고 말했다.", src: "창고 측" },
+        { t: "주변 도로는 한때 통제됐다가 풀렸다.", src: "경찰" }
+      ]
+    },
+    {
+      id: "day3",
+      stamp: "11/22 (일) 07:55",
+      outlet: "종합",
+      title: "가람동 창고 화재… 연기 마신 5명 치료 중",
+      sents: [
+        { t: "가람동 물류창고 화재로 연기를 마신 5명이 병원 치료를 받고 있다.", src: "소방" },
+        { t: "이 가운데 1명은 중환자실에 있다.", src: "병원" },
+        { t: "소방 당국은 불이 3시간 만에 꺼졌다고 밝혔다.", src: "소방" },
+        { t: "경찰은 창고 관계자 3명을 상대로 조사를 이어가고 있다.", src: "경찰" },
+        { t: "경찰은 발화 지점을 2층 창고 안쪽으로 좁혔다.", src: "경찰" },
+        { t: "불은 창고 2층에서 시작된 것으로 추정된다.", src: "소방" },
+        { t: "앞서 인명 피해가 없다고 밝혔던 소방 당국의 1차 발표는 정정됐다.", src: "정정" },
+        { t: "주변 도로는 한때 통제됐다가 어제 저녁에 풀렸다.", src: "경찰" },
+        { t: "화재 원인은 아직 확정되지 않았다.", src: "소방" }
+      ]
+    }
+  ];
+
+  var READ_KEY = "np-news-read-v1";
+
+  var S = {
+    base: "day2",
+    compare: "day3",
+    showSame: true,
+    diff: null
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function art(id) {
+    for (var i = 0; i < ARTICLES.length; i++) if (ARTICLES[i].id === id) return ARTICLES[i];
+    return ARTICLES[0];
+  }
+  function announce(text) {
+    var live = $("live");
+    if (!live) return;
+    live.textContent = "";
+    window.setTimeout(function () { live.textContent = text; }, 60);
+  }
+
+  /* ---------- 문장 비교 ---------- */
+  function norm(s) {
+    return String(s).replace(/[\s.,!?'"“”‘’()《》<>·…:;~\-—]/g, "");
+  }
+  function bigrams(s) {
+    var n = norm(s);
+    var set = Object.create(null);
+    for (var i = 0; i < n.length - 1; i++) set[n.substr(i, 2)] = 1;
+    if (n.length === 1) set[n] = 1;
+    return Object.keys(set);
+  }
+  function dice(a, b) {
+    var A = bigrams(a), B = bigrams(b);
+    if (!A.length || !B.length) return 0;
+    var map = Object.create(null), i, hit = 0;
+    for (i = 0; i < A.length; i++) map[A[i]] = (map[A[i]] || 0) + 1;
+    for (i = 0; i < B.length; i++) {
+      if (map[B[i]]) { hit += 1; map[B[i]] -= 1; }
+    }
+    return (2 * hit) / (A.length + B.length);
+  }
+
+  var NUM_RE = /(\d+(?:\.\d+)?)\s*(명|시간|분|개|곳|차례|%|층|원|년|월|일|대)/g;
+  function numbers(s) {
+    var out = [], m;
+    NUM_RE.lastIndex = 0;
+    while ((m = NUM_RE.exec(String(s))) !== null) {
+      out.push({ v: m[1], u: m[2], raw: m[0] });
+    }
+    return out;
+  }
+
+  function align(baseSents, newSents) {
+    var pairs = [], all = [], i, j;
+    for (i = 0; i < baseSents.length; i++) {
+      for (j = 0; j < newSents.length; j++) {
+        var sim = dice(baseSents[i].t, newSents[j].t);
+        if (sim >= MATCH_MIN) pairs.push({ i: i, j: j, sim: sim });
+        if (sim >= 0.3) all.push({ i: i, j: j, sim: sim });
+      }
+    }
+    pairs.sort(function (a, b) { return b.sim - a.sim; });
+    var usedBase = {}, usedNew = {}, match = {};
+    for (var k = 0; k < pairs.length; k++) {
+      var p = pairs[k];
+      if (usedBase[p.i] || usedNew[p.j]) continue;
+      usedBase[p.i] = 1; usedNew[p.j] = 1;
+      match[p.j] = { i: p.i, sim: p.sim };
+    }
+    return { match: match, usedBase: usedBase, all: all };
+  }
+
+  /* 기사가 스스로 밝힌 정정 표시만 잡는다. 문장 차이로 정정을 추정하지 않는다. */
+  function isCorrection(text) {
+    return /정정|바로잡|철회|앞서 보도|앞서 밝혔/.test(String(text));
+  }
+
+  function numChanges(baseText, newText) {
+    var b = numbers(baseText), n = numbers(newText);
+    var byUnitB = {}, byUnitN = {}, i, out = [];
+    for (i = 0; i < b.length; i++) (byUnitB[b[i].u] = byUnitB[b[i].u] || []).push(b[i].v);
+    for (i = 0; i < n.length; i++) (byUnitN[n[i].u] = byUnitN[n[i].u] || []).push(n[i].v);
+    Object.keys(byUnitN).forEach(function (unit) {
+      var nv = byUnitN[unit].join(",");
+      var bv = (byUnitB[unit] || []).join(",");
+      if (bv !== nv) out.push({ unit: unit, before: bv || "없음", after: nv, raw: n[0].raw });
+    });
+    return out;
+  }
+
+  function markNumbers(text, baseText) {
+    var baseVals = numbers(baseText).map(function (x) { return x.v + x.u; });
+    return esc(text).replace(/(\d+(?:\.\d+)?)\s*(명|시간|분|개|곳|차례|%|층|원|년|월|일|대)/g, function (whole, v, u) {
+      var key = v + u;
+      if (baseVals.indexOf(key) === -1) {
+        return "<mark>" + esc(whole) + "</mark>";
+      }
+      return esc(whole);
+    });
+  }
+
+  function buildDiff(baseId, newId) {
+    var base = art(baseId), neu = art(newId);
+    var al = align(base.sents, neu.sents);
+    var items = [], numRows = [], added = 0, changed = 0, same = 0, fixed = 0;
+
+    for (var j = 0; j < neu.sents.length; j++) {
+      var ns = neu.sents[j];
+      var m = al.match[j];
+      if (m) {
+        var bs = base.sents[m.i];
+        var isSame = m.sim >= SAME_MIN;
+        if (isSame) {
+          same += 1;
+          items.push({ kind: "same", text: ns.t, src: ns.src, sim: m.sim });
+        } else {
+          changed += 1;
+          var nc = numChanges(bs.t, ns.t);
+          for (var q = 0; q < nc.length; q++) {
+            numRows.push({ unit: nc[q].unit, before: nc[q].before, after: nc[q].after, text: ns.t });
+          }
+          items.push({ kind: "chg", text: ns.t, old: bs.t, src: ns.src, sim: m.sim, nums: nc });
+        }
+      } else if (isCorrection(ns.t)) {
+        fixed += 1;
+        items.push({ kind: "fix", text: ns.t, src: ns.src, sim: 0 });
+      } else {
+        added += 1;
+        items.push({ kind: "add", text: ns.t, src: ns.src, sim: 0 });
+      }
+    }
+    var removed = 0;
+    for (var i = 0; i < base.sents.length; i++) {
+      if (!al.usedBase[i]) {
+        removed += 1;
+        items.push({ kind: "rem", text: base.sents[i].t, src: base.sents[i].src, sim: 0 });
+      }
+    }
+
+    /* 임계값 경계(0.35~0.72)에 걸린 짝을 그대로 보여 준다. */
+    var edge = [];
+    for (var e = 0; e < al.all.length; e++) {
+      var p = al.all[e];
+      if (p.sim >= 0.35 && p.sim <= 0.72) {
+        edge.push({ baseText: base.sents[p.i].t, newText: neu.sents[p.j].t, sim: p.sim, matched: !!(al.match[p.j] && al.match[p.j].i === p.i) });
+      }
+    }
+    edge.sort(function (a, b) { return b.sim - a.sim; });
+
+    numRows.sort(function (a, b) { return a.unit < b.unit ? -1 : 1; });
+    return {
+      base: base, neu: neu, items: items, nums: numRows, edge: edge.slice(0, 6),
+      added: added, changed: changed, same: same, removed: removed, fixed: fixed,
+      numCount: numRows.length
+    };
+  }
+
+  /* ---------- 렌더 ---------- */
+  function badge(kind) {
+    return kind === "add" ? "새로 밝혀짐" : kind === "chg" ? "바뀜" : kind === "rem" ? "빠짐" : kind === "fix" ? "정정 표시" : "그대로";
+  }
+
+  function render() {
+    var d = S.diff;
+    $("cAdd").textContent = d.added;
+    $("cChg").textContent = d.changed;
+    $("cRem").textContent = d.removed;
+    $("cFix").textContent = d.fixed;
+    $("cSame").textContent = d.same;
+    $("cNum").textContent = d.numCount;
+
+    $("diffSub").textContent = d.base.stamp + " 「" + d.base.title + "」 → " + d.neu.stamp +
+      " 「" + d.neu.title + "」 · 문장 " + d.base.sents.length + "개와 " + d.neu.sents.length + "개를 대조했습니다.";
+
+    var list = $("diffList");
+    var html = "";
+    var shown = 0;
+    for (var i = 0; i < d.items.length; i++) {
+      var it = d.items[i];
+      if (!S.showSame && it.kind === "same") continue;
+      shown += 1;
+      html += '<li class="' + it.kind + '"><span class="badge">' + badge(it.kind) + "</span>";
+      if (it.kind === "chg") {
+        html += "<p>" + markNumbers(it.text, it.old) + "</p>";
+        html += '<p class="old">이전: <s>' + esc(it.old) + "</s></p>";
+      } else if (it.kind === "rem") {
+        html += "<p><s>" + esc(it.text) + "</s></p><p class=\"old\">이 기사에는 없습니다. 정정된 것인지 단순히 빠진 것인지 이 화면은 판단하지 않습니다.</p>";
+      } else {
+        html += "<p>" + esc(it.text) + "</p>";
+      }
+      html += '<div class="meta">출처 표기: ' + esc(it.src) +
+        (it.kind === "same" ? " · 유사도 " + it.sim.toFixed(2) : it.kind === "chg" ? " · 유사도 " + it.sim.toFixed(2) : "") +
+        "</div></li>";
+    }
+    list.innerHTML = html;
+
+    var nb = $("numBody");
+    if (d.nums.length) {
+      var rows = "";
+      for (var r = 0; r < d.nums.length; r++) {
+        rows += "<tr><td>" + esc(d.nums[r].unit) + "</td><td><b>" + esc(d.nums[r].before) +
+          "</b></td><td><b>" + esc(d.nums[r].after) + "</b></td><td class=\"small\">" + esc(d.nums[r].text) + "</td></tr>";
+      }
+      nb.innerHTML = rows;
+    } else {
+      nb.innerHTML = '<tr><td colspan="4" class="muted small">숫자가 바뀐 문장이 없습니다.</td></tr>';
+    }
+
+    var eb = $("edgeBody");
+    if (d.edge.length) {
+      var erows = "";
+      for (var x = 0; x < d.edge.length; x++) {
+        var e = d.edge[x];
+        erows += "<tr><td class=\"small\">" + esc(e.baseText) + "</td><td class=\"small\">" + esc(e.newText) +
+          "</td><td><b>" + e.sim.toFixed(2) + "</b></td><td class=\"small\">" +
+          (e.matched ? "짝지어짐" : "짝 안 지어짐(따로 셈)") + "</td></tr>";
+      }
+      eb.innerHTML = erows;
+    } else {
+      eb.innerHTML = '<tr><td colspan="4" class="muted small">경계에 걸린 짝이 없습니다.</td></tr>';
+    }
+
+    $("btnAll").textContent = S.showSame ? "그대로인 문장 숨기기" : "그대로인 문장 보기";
+    $("btnAll").setAttribute("aria-pressed", S.showSame ? "true" : "false");
+    $("btnAll").className = S.showSame ? "btn on" : "btn";
+
+    announce("새로 밝혀진 문장 " + d.added + "개, 바뀐 문장 " + d.changed + "개, 빠진 문장 " + d.removed +
+      "개, 정정 표시 " + d.fixed + "개, 숫자 변화 " + d.numCount + "곳입니다. 화면에 " + shown + "줄을 보여 주고, 경계 사례 " + d.edge.length + "건을 따로 적었습니다.");
+
+    renderReadMark();
+  }
+
+  function pairKey() { return S.base + ">" + S.compare; }
+
+  function readState() {
+    try {
+      var raw = localStorage.getItem(READ_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function renderReadMark() {
+    var st = readState();
+    var box = $("readMark");
+    if (st && st.key === pairKey()) {
+      box.hidden = false;
+      box.innerHTML = "지난번에 이 비교를 <b>" + st.count + "줄</b>까지 읽었습니다(" + esc(st.at) + "). " +
+        "<button type=\"button\" class=\"btn\" id=\"btnResumeRead\" style=\"margin-left:6px\">그 자리부터 보기</button>";
+      var btn = $("btnResumeRead");
+      if (btn) {
+        btn.addEventListener("click", function () {
+          var li = $("diffList").children[Math.min(st.count, $("diffList").children.length - 1)];
+          if (li) {
+            li.scrollIntoView({ block: "center" });
+            li.setAttribute("tabindex", "-1");
+            li.focus();
+            announce("지난번에 멈춘 줄로 이동했습니다.");
+          }
+        });
+      }
+    } else {
+      box.hidden = true;
+    }
+  }
+
+  /* ---------- wiring ---------- */
+  function fillSelects() {
+    var b = $("selBase"), n = $("selNew");
+    var html = "";
+    for (var i = 0; i < ARTICLES.length; i++) {
+      html += '<option value="' + ARTICLES[i].id + '">' + ARTICLES[i].stamp + " · " + esc(ARTICLES[i].outlet) + "</option>";
+    }
+    b.innerHTML = html; n.innerHTML = html;
+    b.value = S.base; n.value = S.compare;
+  }
+
+  function recompute() {
+    S.diff = buildDiff(S.base, S.compare);
+    render();
+  }
+
+  function init() {
+    fillSelects();
+    S.diff = buildDiff(S.base, S.compare);
+    render();
+
+    $("selBase").addEventListener("change", function () {
+      if (this.value === S.compare) {
+        var other = ARTICLES.filter(function (a) { return a.id !== this.value; }.bind(this))[0];
+        if (other) { S.compare = other.id; $("selNew").value = other.id; }
+      }
+      S.base = this.value;
+      recompute();
+      $("diffHeading").focus();
+    });
+
+    $("selNew").addEventListener("change", function () {
+      if (this.value === S.base) {
+        var other = ARTICLES.filter(function (a) { return a.id !== this.value; }.bind(this))[0];
+        if (other) { S.base = other.id; $("selBase").value = other.id; }
+      }
+      S.compare = this.value;
+      recompute();
+      $("diffHeading").focus();
+    });
+
+    $("btnAll").addEventListener("click", function () {
+      S.showSame = !S.showSame;
+      render();
+    });
+
+    $("btnReadAll").addEventListener("click", function () {
+      var count = $("diffList").children.length;
+      var at = new Date().toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      try {
+        localStorage.setItem(READ_KEY, JSON.stringify({ key: pairKey(), count: count, at: at }));
+      } catch (e) { /* 저장 못 해도 화면은 계속 */ }
+      $("readSaved").textContent = "저장했습니다. 다음에 같은 사건을 열면 이 자리를 알려 줍니다.";
+      renderReadMark();
+      announce("이 자리를 기억했습니다. 다음에 " + art(S.compare).stamp + " 기사를 다시 비교하면 이어서 볼 수 있습니다.");
+    });
+
+    /* 탭 */
+    var tabs = document.querySelectorAll('nav.tabs [role="tab"]');
+    Array.prototype.forEach.call(tabs, function (tab) {
+      tab.addEventListener("click", function () {
+        Array.prototype.forEach.call(tabs, function (t) {
+          var on = t === tab;
+          t.setAttribute("aria-selected", on ? "true" : "false");
+          var panel = document.getElementById(t.getAttribute("aria-controls"));
+          if (panel) panel.hidden = !on;
+        });
+      });
+      tab.addEventListener("keydown", function (ev) {
+        if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
+        ev.preventDefault();
+        var list = Array.prototype.slice.call(tabs);
+        var i = list.indexOf(tab);
+        var next = list[(i + (ev.key === "ArrowRight" ? 1 : list.length - 1)) % list.length];
+        next.focus();
+        next.click();
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+
+</script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var out = $("dv-out");
+  if(!out) return;
+
+  function bigrams(s){
+    var t = String(s || "").replace(/[\s.,!?‘’"'()]/g, "");
+    var set = {};
+    for(var i = 0; i < t.length - 1; i++){
+      var g = t.slice(i, i + 2);
+      set[g] = (set[g] || 0) + 1;
+    }
+    return set;
+  }
+  function dice(a, b){
+    var A = bigrams(a), B = bigrams(b);
+    var ka = Object.keys(A), kb = Object.keys(B);
+    if(!ka.length || !kb.length) return 0;
+    var inter = 0;
+    ka.forEach(function(k){ if(B[k]) inter += Math.min(A[k], B[k]); });
+    var total = 0;
+    ka.forEach(function(k){ total += A[k]; });
+    kb.forEach(function(k){ total += B[k]; });
+    return (2 * inter) / total;
+  }
+  function nums(s){
+    return String(s || "").match(/\d+(\.\d+)?/g) || [];
+  }
+  function draw(){
+    var a = $("dv-a").value, b = $("dv-b").value;
+    var th = Number($("dv-range").value);
+    $("dv-t").textContent = th.toFixed(2);
+    var sim = dice(a, b);
+    var same = sim >= th;
+    var na = nums(a).join(","), nb = nums(b).join(",");
+    var numLine = na !== nb
+      ? "숫자가 " + (na || "없음") + "에서 " + (nb || "없음") + "로 달라요. 같은 문장으로 묶이면 숫자 변화 줄에 함께 올라갑니다."
+      : "숫자는 같아요.";
+    out.innerHTML = "유사도 " + sim.toFixed(3) + "이고 기준값 " + th.toFixed(2) + "보다 " +
+      (same ? "높아서 같은 문장으로 묶여요." : "낮아서 다른 문장으로 남아요.") +
+      "<div class='muted' style='margin-top:6px;font-weight:400'>" + numLine + "</div>";
+  }
+  ["dv-a","dv-b"].forEach(function(id){ $(id).addEventListener("input", draw); });
+  $("dv-range").addEventListener("input", draw);
+  draw();
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>쪽지 — 왜 왔는지 먼저 말한다 | sun-pickle</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --ink:#14171c; --muted:#5c6470; --line:#e2e6eb;
+    --blue:#1f6feb; --blue-soft:#e8f0fe; --green:#0f9d58; --green-soft:#e7f7ee;
+    --amber:#b45309; --amber-soft:#fff5e6; --red:#b3261e; --red-soft:#fdecea;
+    --gray-soft:#eef1f5; --focus:#1a73e8;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 10px 28px -18px rgba(16,24,40,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.62 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:26px 18px 80px}
+  header.top{background:#fff;border-bottom:1px solid var(--line)}
+  .top-in{max-width:1120px;margin:0 auto;padding:18px 18px 12px}
+  .kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  h1{font-size:26px;line-height:1.28;margin:6px 0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  nav.tabs{max-width:1120px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow:auto}
+  nav.tabs button{border:0;background:none;padding:13px 12px;font:inherit;font-weight:700;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--blue)}
+  nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:6px 6px 0 0}
+  section[role="tabpanel"][hidden]{display:none}
+  .grid{display:grid;grid-template-columns:400px 1fr;gap:26px;align-items:start;margin-top:22px}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  h2{font-size:17px;margin:0 0 10px}
+  h3{font-size:14px;margin:16px 0 6px}
+  p{margin:0 0 10px}
+  ul,ol{margin:0 0 10px;padding-left:20px}li{margin:3px 0}
+  .muted{color:var(--muted)}.small{font-size:13.5px}.tiny{font-size:12px}
+  code{background:#f1f3f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:800}
+  .pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800}
+  .pill.g{background:var(--green-soft);color:#0b6b3a}
+  .pill.b{background:var(--blue-soft);color:#14509e}
+  .pill.a{background:var(--amber-soft);color:var(--amber)}
+  .pill.r{background:var(--red-soft);color:var(--red)}
+  .pill.n{background:var(--gray-soft);color:#414a56}
+
+  .phone{width:400px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;
+    box-shadow:0 20px 50px -24px rgba(16,24,40,.35);display:flex;flex-direction:column;min-height:680px}
+  .ph-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:4}
+  .ph-head .ttl{font-weight:800;font-size:15px}
+  .ph-head .sp{flex:1}
+  .ph-head .cnt{font-size:12px;color:var(--muted)}
+  .list{padding:10px;flex:1;overflow:auto;max-height:600px}
+  .note{border:1px solid var(--line);border-radius:13px;margin-bottom:10px;overflow:hidden;background:#fff}
+  .note.open{border-color:#c9d6ea;box-shadow:0 0 0 3px var(--blue-soft)}
+  .note-h{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;cursor:pointer;width:100%;border:0;background:none;font:inherit;text-align:left}
+  .note-h:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+  .av{width:34px;height:34px;border-radius:50%;background:#dfe5ee;flex:0 0 34px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#4a5563}
+  .note-h .nm{font-weight:800;font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .note-h .tm{font-size:11.5px;color:var(--muted)}
+  .note-h .pv{font-size:13px;color:#3b434e;margin-top:3px;line-height:1.45}
+  .why{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;margin-top:7px}
+  .why.g{color:#0b6b3a}.why.b{color:#14509e}.why.a{color:var(--amber)}.why.r{color:var(--red)}
+  .why svg{width:13px;height:13px;flex:0 0 13px}
+  .body{padding:0 12px 12px;border-top:1px dashed var(--line);margin-top:0}
+  .chain{list-style:none;padding:10px 0 0;margin:0;font-size:12.5px}
+  .chain li{display:flex;gap:9px;margin:0 0 8px}
+  .chain .dot2{width:9px;height:9px;border-radius:50%;background:#c8d2e0;flex:0 0 9px;margin-top:6px;position:relative}
+  .chain li:not(:last-child) .dot2::after{content:"";position:absolute;left:4px;top:11px;width:1px;height:20px;background:#dfe4ec}
+  .chain li.last .dot2{background:var(--blue)}
+  .chain b{font-weight:800}
+  .chain .src{color:var(--muted);font-size:11.5px}
+  .evid{background:#f7f9fc;border:1px solid #e6ebf3;border-radius:10px;padding:8px 10px;font-size:12px;color:#3a4757;margin-top:2px}
+  .evid b{color:var(--ink)}
+  .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .btn{border:0;border-radius:10px;padding:9px 12px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:var(--gray-soft);color:var(--ink)}
+  .btn.pri{background:var(--blue);color:#fff}
+  .btn.danger{background:#fff;border:1px solid #f0c8c3;color:var(--red)}
+  .btn.sm{padding:6px 9px;font-size:12px}
+  .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .warnbox{margin-top:9px;background:var(--amber-soft);border:1px solid #f0d3a6;border-radius:10px;padding:9px 11px;font-size:12.5px;color:#7a4a08}
+  .report{border-top:1px dashed var(--line);padding:10px 12px 12px;background:#fbfcfe}
+  .report .rr{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .toast{position:sticky;bottom:0;background:#111827;color:#e5f3ea;font-size:12.5px;padding:9px 12px;opacity:0;transform:translateY(6px);transition:.2s;pointer-events:none}
+  .toast.on{opacity:1;transform:none}
+  .log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.7;background:#101a24;color:#cfe4d8;border-radius:10px;padding:10px 12px;max-height:180px;overflow:auto;margin:0;white-space:pre-wrap}
+  .log b{color:#8be0b0}
+  .callout{border-left:3px solid var(--blue);background:var(--blue-soft);padding:10px 12px;border-radius:0 10px 10px 0;font-size:13.5px;margin:12px 0}
+  .callout.warn{border-color:#f59e0b;background:var(--amber-soft)}
+  .callout.bad{border-color:#e05a4f;background:var(--red-soft)}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+  .kpi div{border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+  .kpi b{display:block;font-size:13px}.kpi span{font-size:12px;color:var(--muted)}
+  footer.meta{max-width:1120px;margin:0 auto;padding:6px 18px 40px;color:var(--muted);font-size:12px}
+  .sr{font-size:12.5px;background:#fffbea;border:1px solid #f2e2a8;border-radius:10px;padding:9px 11px;margin-top:8px;color:#5a4b10}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="kicker">sun-pickle · Npossible 새판 시즌0 · 미션 <b>mission-6ed27bf2b1e1</b></div>
+    <h1>쪽지가 온 이유를, 열기 전에 한 줄로 말한다</h1>
+    <p class="sub">“스팸인가?”를 감으로 묻는 대신, 어디서 왔는지·얼마나 아는 사이인지를 근거와 함께 붙입니다. 근거가 없으면 없다고 말합니다.</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="출품작 구성">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">① 체험 (쪽지함)</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 문제 근거</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 명세·엣지케이스</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 지표·검증·한계</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 조심한 지점과 경로 원본</button>
+    <button role="tab" id="t6" aria-controls="p6" aria-selected="false">⑥ 지난 라운드 반영</button>
+    <button role="tab" id="t7" aria-controls="p7" aria-selected="false">⑦ 이번 라운드 반영</button>
+  </nav>
+</header>
+
+<div class="wrap">
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+  <div class="grid">
+    <div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="ttl">쪽지함</div><div class="sp"></div><div class="cnt" id="cnt">안 읽은 쪽지 4</div>
+        </div>
+        <div class="list" id="list"></div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </div>
+      <p class="tiny muted" style="margin-top:10px">※ 실제 네이트 쪽지 화면이 아니라, 쪽지함의 <b>읽기 순서</b>를 재현한 프로토타입입니다. 쪽지 본문·발신자는 모두 예시이며 실제 인물이 아닙니다. 아래 기록은 이 브라우저에서 실제로 누른 동작만 남깁니다.</p>
+    </div>
+
+    <div>
+      <div class="card pad">
+        <h2>이 화면에서 확인할 것</h2>
+        <ol class="small">
+          <li>쪽지를 열지 않아도 <b>왜 왔는지</b>가 목록에 한 줄로 보입니다(경로가 있으면 파란색, 없으면 주황색).</li>
+          <li>펼치면 <b>경로 사슬</b>이 나옵니다 — 내 댓글 → 상대 글 → 이 쪽지, 각 단계 날짜 포함.</li>
+          <li>‘얼마나 아는 사이인지’는 감이 아니라 <b>근거</b>로 적습니다(이웃 3개월 · 주고받은 쪽지 5건).</li>
+          <li>경로가 없는 쪽지는 <b>없다고 말하고</b>, 링크를 열지 않도록 안내한 뒤 신고·차단을 바로 옆에 둡니다.</li>
+          <li>신고는 이유를 한 번에 고르고, <b>차단까지 한 번에</b> 끝납니다(되돌리기 가능).</li>
+        </ol>
+        <div class="callout small"><b>설계의 중심.</b> ‘스팸/지인’ 두 칸으로 단정하지 않습니다. 단정은 틀렸을 때 사용자에게 책임이 남습니다. 대신 <b>판단에 필요한 사실</b>(경로·관계 근거·첫 쪽지 여부)을 먼저 보여 주고, 판단은 한 번의 누름으로 끝나게 합니다.</div>
+      </div>
+
+      <div class="card pad" style="margin-top:14px">
+        <h2 style="display:flex;gap:8px;align-items:center">내 동작 기록 <span class="pill n" id="stepCount">0</span></h2>
+        <pre class="log" id="log">(아직 아무 동작 없음)</pre>
+        <div style="margin-top:8px"><button class="btn sm" id="btnSR">화면 낭독기가 읽는 문장</button></div>
+        <div class="sr" id="srBox" hidden></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>무엇이 문제인가</h2>
+    <p class="small">쪽지함은 보낸 사람·시간·본문을 보여 줍니다. 그런데 처음 받는 사람이 실제로 던지는 질문은 셋입니다 — <b>“이거 누구지”, “왜 나한테 왔지”, “답을 해도 되나”</b>. 지금 화면은 셋 다에 답하지 않고, 본문을 먼저 읽게 만듭니다.</p>
+    <table>
+      <thead><tr><th style="width:30%">사용자가 하는 질문</th><th style="width:33%">지금 화면이 주는 것</th><th>이 안이 주는 것</th></tr></thead>
+      <tbody>
+        <tr><td>“이거 누구지”</td><td>닉네임과 프로필 사진</td><td>관계 근거 한 줄 — <b>이웃 3개월 · 쪽지 5건</b></td></tr>
+        <tr><td>“왜 나한테 왔지”</td><td>없음 (본문에서 유추해야 함)</td><td>경로 사슬 — <b>내 댓글(11/18) → 상대 글(11/19) → 이 쪽지</b></td></tr>
+        <tr><td>“답을 해도 되나”</td><td>차단 버튼 위치를 찾아야 함</td><td>경로 없음일 때 <b>신고·차단을 본문 바로 옆</b>에, 이유 선택은 한 번에</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn small"><b>단정하지 않기.</b> “스팸입니다” 같은 판정은 넣지 않았습니다. 오탐이 나면 진짜 지인의 쪽지가 버려지고, 미탐이 나면 사용자가 ‘안전하다는 표시’를 믿게 됩니다. 대신 <b>확인 가능한 사실</b>만 표시하고, 판단이 서지 않을 때를 위해 “경로를 확인할 수 없어요”라는 상태를 따로 만들었습니다.</div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>쪽지 한 건이 거치는 상태</h2>
+    <pre class="log" style="max-height:none;font-size:12px;color:#cfe4d8">[수신] ─ 경로 스냅샷 생성(발신 시점에 1회 계산해 저장)
+   ├─ 경로 있음(내 글·댓글·이웃·모임 등) → 파란 줄: "내 판 댓글에 답장 · 3일 전"
+   ├─ 경로 없음(자동 발송·외부 유입 등)   → 주황 줄: "왜 왔는지 확인할 수 없어요"
+   └─ 계산 실패/시간 초과                 → 회색 줄: "경로를 확인하지 못했어요" + [다시 확인]
+[열기]  → 경로 사슬 + 관계 근거 표시 (근거마다 출처: 이웃 맺은 날, 쪽지 수, 글 링크)
+[행동]  → 답장 / 이웃 맺기 / 차단(되돌리기 30초) / 신고(이유 1택 + 차단 동시)
+[반복]  → 같은 발신자 하루 3건 이상 & 경로 없음 → 쪽지함에서 "확인 필요" 묶음으로 접어 둠(삭제 아님)</pre>
+
+    <h3>문구 규칙</h3>
+    <ul class="small">
+      <li>경로가 있으면 <b>어디서</b> + <b>언제</b>를 함께 씁니다(“내 판 댓글에 답장 · 3일 전”). 날짜만 있으면 맥락이 안 잡히고, 장소만 있으면 최신성 판단이 안 됩니다.</li>
+      <li>경로가 없으면 <b>“없다”고 쓰지 않고 “확인할 수 없다”</b>고 씁니다. 우리가 모르는 것과 상대가 안 남긴 것을 구분해야 사용자가 다음 판단을 할 수 있습니다.</li>
+      <li>관계 근거는 <b>셀 수 있는 것</b>만: 이웃 맺은 날, 주고받은 쪽지 수, 함께 있는 모임. “신뢰도 87점” 같은 숫자는 만들지 않습니다.</li>
+    </ul>
+
+    <h3>엣지케이스</h3>
+    <table>
+      <thead><tr><th style="width:27%">상황</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>경로가 여러 개</td><td>가장 최근 경로 1개를 대표로 쓰고, 펼치면 나머지를 날짜순으로. “왜 왔나요”에 답이 하나로 정해지지 않는 게 정상</td></tr>
+        <tr><td>경로에 제3자 정보</td><td>다른 사람 닉네임·글 제목은 <b>내가 이미 볼 수 있는 것</b>만 노출. 비공개 글 제목은 “비공개 글”로 익명화</td></tr>
+        <tr><td>발신자가 차단을 피해 새 계정</td><td>차단은 계정이 아니라 <b>경로 단위</b>로도 남김(같은 모임·같은 글 경로 차단). 다만 우회 자체를 막는다고 약속하지 않음</td></tr>
+        <tr><td>신고 남용</td><td>신고는 접수만, 제재는 별도 심사. 신고 3회 누적으로 자동 차단은 하지 않음(오탐 방지), 대신 내 쪽지함에서만 조용히 접기</td></tr>
+        <tr><td>쪽지 1,000건 이상</td><td>경로 스냅샷은 수신 시점에 미리 계산해 저장(열 때 계산하지 않음). 실패 시 회색 상태로 남기고 재계산은 사용자가 요청할 때만</td></tr>
+        <tr><td>화면 낭독기</td><td>목록 한 줄을 “보낸 사람 OO, 오늘 14:20, 왜 왔는지: 내 판 댓글에 답장 3일 전, 안 읽음”으로 읽도록 라벨을 묶음</td></tr>
+        <tr><td>색 구분 어려움</td><td>파랑/주황을 색만으로 쓰지 않고 문장으로 구분(“확인할 수 없어요”)</td></tr>
+        <tr><td>링크가 든 쪽지</td><td>경로가 없으면 링크는 <b>접힌 상태</b>로 표시하고 “주소를 확인한 뒤 누르세요”를 붙임(자동 열기 없음)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>부작용</h3>
+    <ul class="small">
+      <li><b>경로 표시가 감시처럼 느껴질 수 있음</b> — 경로는 <b>받는 사람에게만</b> 보이고, 발신자에게 “상대가 봤다”를 알리지 않습니다.</li>
+      <li><b>경로 계산 비용</b> — 수신 시 1회 계산·저장. 저장 실패를 허용하는 회색 상태를 두어, 경로 때문에 쪽지 수신이 막히지 않게 함.</li>
+      <li><b>‘경로 없음’의 낙인</b> — 경로가 없다고 나쁜 쪽지가 아니므로 문구에서 ‘스팸’이라는 단어를 쓰지 않고, 차단은 되돌릴 수 있게 함.</li>
+    </ul>
+  </div>
+</section>
+
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>재는 것과, 아직 모르는 것</h2>
+    <div class="callout warn small"><b>먼저 밝힐 것.</b> 이 출품에는 실사용자 검증 결과가 없습니다. 실제 네이트 쪽지 화면의 세부 요소(버튼 위치·문구)도 이 작업에서 확인하지 못했고, 그래서 프로토타입은 <b>일반적인 쪽지함 구조</b>를 전제로 만들었습니다. 아래는 그 전제 위의 설계와 측정 계획입니다.</div>
+    <h3>이벤트</h3>
+    <table>
+      <thead><tr><th style="width:33%">이벤트</th><th style="width:24%">시점</th><th>쓰임</th></tr></thead>
+      <tbody>
+        <tr><td><code>note_list_view</code></td><td>쪽지함 노출</td><td>분모</td></tr>
+        <tr><td><code>why_open</code></td><td>경로 사슬 펼침</td><td>“왜 왔는지”를 실제로 확인하는 비율</td></tr>
+        <tr><td><code>open_before_why</code></td><td>경로 확인 없이 본문 열기</td><td>경로 줄이 읽히는지</td></tr>
+        <tr><td><code>block</code> / <code>block_undo</code></td><td>차단 / 30초 내 되돌림</td><td>오차단률(되돌림 비율)</td></tr>
+        <tr><td><code>report</code> + 이유</td><td>신고 제출</td><td>이유 분포, 남용 감시</td></tr>
+        <tr><td><code>nopath_continue</code></td><td>경로 없음 쪽지에 답장</td><td>경로 없음이 답장을 막는지(과잉 억제 감시)</td></tr>
+      </tbody>
+    </table>
+    <div class="kpi">
+      <div><b>경로 확인 후 열기</b><span>목표 40% 이상</span></div>
+      <div><b>차단 되돌림률</b><span>가드레일 15% 이하</span></div>
+      <div><b>경로 없음 쪽지 답장률</b><span>현행 대비 −20%p 이내</span></div>
+      <div><b>경로 계산 실패율</b><span>0.5% 이하, 초과 시 회색 상태 기본</span></div>
+    </div>
+    <h3>A/B 설계</h3>
+    <ul class="small">
+      <li>A 현행 / B 경로 줄만 / C 경로 줄 + 관계 근거 + 한 번에 신고·차단</li>
+      <li>주 지표: 첫 쪽지를 받은 사용자가 ‘열기 전에’ 경로를 확인한 비율. 보조: 차단·신고까지 걸린 시간(중앙값).</li>
+      <li>가드레일: 정상 쪽지 답장률, 오차단(되돌림) 비율, 쪽지함 이탈률.</li>
+    </ul>
+    <h3>아직 확인하지 못한 것</h3>
+    <ul class="small">
+      <li>사용자가 ‘경로 없음’을 위험 신호로 읽는지, 아니면 무시하는지 — 인지 인터뷰 필요.</li>
+      <li>경로가 답장 판단에 실제로 도움이 됐는지 — 아직 잰 값이 없습니다. 경로 확인 뒤 답장까지 걸린 시간과 답장률로 재야 합니다.</li>
+      <li>실제 네이트 쪽지 화면 구조 — 화면 확인 후 문구 길이·배치 재검증 필요.</li>
+    </ul>
+  </div>
+</section>
+
+
+<section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>이 화면이 조심한 세 지점</h2>
+    <p class="small muted">아래는 실제 사용자 반응이 아니라 제가 설계하면서 미리 막아 둔 지점입니다. 반응이 아직 없다는 사실은 넷째 탭에 적었습니다.</p>
+    <table>
+      <thead><tr><th style="width:40%">걱정되는 지점</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>신고가 곧바로 차단으로 이어지면 부담스럽다</td><td>‘신고’ 버튼 아래에 <b>차단도 함께 적용되고 30초 안에 되돌릴 수 있다</b>고 미리 적었습니다. 신고 화면에서 차단 동반을 끌 수 있고, 끄면 신고만 접수됩니다.</td></tr>
+        <tr><td>활동 기록을 잇는 것만으로 ‘왜 보냈는지’를 알 수는 없다</td><td>문구를 ‘왜’가 아니라 <b>‘무엇을 근거로 왔는지’</b>로 낮춰 씁니다. 내 댓글에 답장이지, 당신을 알고 싶어서가 아닙니다. 모르면 확인할 수 없다고 씁니다.</td></tr>
+        <tr><td>경로 원본이 삭제되거나 비공개로 바뀌면</td><td>원본이 사라진 경로는 회색 ‘경로 원본이 바뀜’ 상태로 내려가고, 신고를 취소하면 차단도 함께 풀립니다. 아래 데모에서 직접 바꿔 볼 수 있습니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>데모 — 원본 글이 비공개로 바뀐 경로</h2>
+    <p class="tiny muted">경로는 수신 시점에 저장해 둡니다. 그 사이 원본 글이 비공개가 되면, 경로를 그대로 보여 주면 안 됩니다(내가 볼 수 없는 글의 제목이 노출됨).</p>
+    <div id="stale-card" style="border:1px solid var(--line);border-radius:12px;padding:12px">
+      <div class="tiny" style="font-weight:800">서연 님 · 오늘 14:20</div>
+      <div class="tiny" style="margin-top:4px;color:#0b6b3a;font-weight:800" id="stale-why">내 판 댓글에 답장 · 3일 전</div>
+      <ul class="chain" style="padding-top:8px">
+        <li><span class="dot2"></span><span><b>내 댓글</b> <span class="src">11/18</span><br><span class="src">‘동네 헬스장 3개월 다닌 후기’ 글에 남긴 댓글</span></span></li>
+        <li class="last"><span class="dot2"></span><span><b id="stale-step">서연 님의 글</b> <span class="src">11/19</span><br><span class="src" id="stale-desc">같은 글에 답글 “아침 7시가 한산해요”</span></span></li>
+      </ul>
+      <div class="row" style="margin-top:6px">
+        <button class="btn sm" id="stale-toggle">원본 글이 비공개로 바뀐 상황 보기</button>
+      </div>
+      <div class="tiny muted" id="stale-note" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>바꾸지 않은 것</h2>
+    <ul class="small">
+      <li><b>‘스팸/지인’ 자동 판정</b>은 넣지 않았습니다. 판단에 필요한 것은 판정이 아니라 근거이고, 판정은 틀렸을 때 책임이 사용자에게 남습니다.</li>
+      <li><b>신고 즉시 영구 차단</b>은 유지하지 않았습니다. 대신 동반 여부를 사용자가 고르고, 되돌리기를 같은 동작에 묶었습니다.</li>
+      <li><b>검증 결과를 꾸며 내지 않았습니다.</b> 실제 사용자 반응은 아직 없고 ④의 계획만 있습니다.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 6. V2 ================= -->
+<section role="tabpanel" id="p6" aria-labelledby="t6" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>처음 낸 쪽지함에서 받은 반응과 고친 것</h2>
+    <table>
+      <thead><tr><th style="width:38%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr><td>일반 사용자와 파워유저 모두 “신고하면 차단도 같이 된다는 걸 누르기 전에 확실히 알려 줬으면”</td><td>안내 문장을 버튼 <b>아래에서 위로</b> 옮기고, 버튼 이름도 <b>신고 (차단 함께)</b>로 바꿨습니다. 누르기 전에 보이는 곳에 있습니다. <b>[체험 탭]</b></td></tr>
+        <tr><td>리뷰어 “경로를 실제 서비스에서 어떻게 수집하고 검증하는지, 답장 판단에 도움이 됐는지는 제시되지 않았다”</td><td>무엇을 언제 기록하고 언제 확인하는지 표로 적었습니다. 도움이 됐는지는 <b>아직 모른다</b>고 쓰고, 배포 뒤 재야 할 세 지표만 남겼습니다. <b>[아래 표와 넷째 탭]</b></td></tr>
+        <tr><td>운영감사 “경로 기록과 공개 범위 변경 반영 비용, 신고와 차단을 함께 되돌리는 처리”</td><td>경로는 쪽지 한 건에 한 줄로 저장하고 90일 뒤 지웁니다. 원본이 바뀌면 표시할 때 확인해 회색 상태로 내립니다. 신고와 차단은 한 번에 처리하고 되돌리기도 한 번에 합니다. <b>[셋째 탭]</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>경로를 어떻게 기록하고 확인하는가</h2>
+    <table>
+      <thead><tr><th style="width:22%">항목</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>기록하는 것</td><td>쪽지 한 건에 경로 한 줄. 근거가 된 사건(내 댓글, 이웃의 이웃, 전체 공개 글 조회)의 종류와 시각과 사건 번호입니다. 본문은 복사하지 않습니다.</td></tr>
+        <tr><td>확인하는 때</td><td>쪽지함을 열 때 한 번, 그 쪽지를 펼칠 때 한 번. 원본 글의 공개 범위가 바뀌었으면 그 자리에서 확인하고 표시를 내립니다.</td></tr>
+        <tr><td>보관 기한</td><td>90일. 지나면 경로 줄을 지우고 ‘경로 기록이 없어요’로 바뀝니다.</td></tr>
+        <tr><td>확인할 수 없을 때</td><td>없다고 단정하지 않고 확인할 수 없어요로 씁니다. 그 상태에서는 링크를 접고, 같은 발신자의 반복 수신만 알립니다.</td></tr>
+        <tr><td>비용</td><td>쪽지 한 건당 한 줄이라 저장량이 작습니다. 원본 조회는 펼칠 때만 하므로 목록을 열 때 드는 비용은 늘지 않습니다. 원본이 바뀐 경우의 재확인 비용은 남는 부담이고, 90일 뒤 지우는 것으로 줄입니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>바꾸지 않은 것</h2>
+    <ul class="small">
+      <li><b>경로가 답장 판단에 도움이 됐다는 주장은 넣지 않았습니다.</b> 아직 잰 값이 없습니다.</li>
+      <li><b>다른 기기에서도 경로를 보여 주는 문제는 다루지 않았습니다.</b> 이 화면은 한 브라우저 안의 예시입니다.</li>
+    </ul>
+  </div>
+</section>
+<section role="tabpanel" id="p7" aria-labelledby="t7" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>이번 라운드에서 받은 반응과 바꾼 것</h2>
+    <p class="small muted">사용자 패널 둘, 리뷰어, 운영감사가 남긴 문장과 그에 대응해 바꾼 것이에요. 이번에는 목록 문구 두 곳을 실제로 고쳤고, 나머지는 아래 시험 상자와 표로 확인할 수 있게 했어요. 목록 전체에 붙이지 않은 것은 붙이지 않았다고 적었습니다.</p>
+    <table>
+      <thead><tr><th style="width:36%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>일반 사용자 “‘왜 왔는지 확인할 수 없어요’가 스팸이라는 뜻은 아니라는 점도 짧게 알려주면 좋겠어요”</td>
+          <td>목록 주황 줄과 경로가 없을 때 안내 문장에 스팸이라는 뜻은 아니라는 말을 붙였어요. 실제 목록에서 바로 보여요.</td>
+        </tr>
+        <tr>
+          <td>파워유저 “접힌 묶음에 안 읽은 쪽지가 몇 건인지 바로 보이면 더 좋겠어요”</td>
+          <td>묶음 시험 상자에 안 읽은 건수를 붙였어요. 다만 이 건수는 이 상자 안에서만 세요. 목록 전체에 붙이는 일은 아직 하지 않았어요.</td>
+        </tr>
+        <tr>
+          <td>리뷰어 “경로를 어떤 데이터로 확인하는지, 댓글 이력이 있는 발신자가 보낸 위험한 쪽지를 사용자가 안전하다고 오해하지 않는지는 예시만으로 검증되지 않는다”</td>
+          <td>경로 출처 표를 넣었어요. 경로마다 어떤 데이터로 확인하는지 적었어요. 경로가 있다는 것과 내용이 안전하다는 것은 다르다고 화면 안에 문장으로 적었어요. 링크는 주소를 보여 주고 누르기 전에 확인하게 했어요.</td>
+        </tr>
+        <tr>
+          <td>운영감사 “원글이 삭제되거나 비공개로 바뀌면 표시도 갱신해야 하고, 자동 묶음은 정상 쪽지까지 접히는 사례를 확인한 뒤에 붙이는 게 좋겠다”</td>
+          <td>원글 삭제와 비공개 시험을 넣었어요. 원글이 사라지면 경로 줄이 확인하지 못한 상태로 바뀌고 다시 확인 버튼이 나와요. 자동 묶음은 기본값을 꺼 두고, 켜면 경로가 있는 쪽지는 접지 않는다는 규칙을 상자 안에서 보여 줘요.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:16px">
+    <div class="card pad">
+      <h2 style="font-size:15px">원글이 사라진 뒤의 경로 줄</h2>
+      <p class="tiny muted">경로는 발신할 때 한 번 계산해 저장해요. 그 뒤 원글이 지워지거나 비공개로 바뀌면 저장된 경로를 그대로 보여 주면 사실과 달라져요. 아래 상자에서 세 경우를 눌러 보세요.</p>
+      <div class="row" style="flex-wrap:wrap">
+        <button class="btn ghost" data-nv="ok" style="font-size:12.5px">원글 그대로</button>
+        <button class="btn ghost" data-nv="gone" style="font-size:12.5px">원글 삭제됨</button>
+        <button class="btn ghost" data-nv="hidden" style="font-size:12.5px">원글 비공개로 바뀜</button>
+      </div>
+      <div id="nv-line" style="margin-top:12px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:13px;font-weight:700"></div>
+      <div id="nv-sub" class="tiny muted" style="margin-top:8px"></div>
+      <div class="row" style="margin-bottom:0"><button class="btn ghost" id="nv-recheck" style="font-size:12.5px">경로 다시 확인</button></div>
+      <div id="nv-out" class="tiny" style="margin-top:8px;font-weight:700"></div>
+    </div>
+
+    <div class="card pad">
+      <h2 style="font-size:15px">자동 묶음은 기본값이 꺼짐</h2>
+      <p class="tiny muted">운영감사 지적대로 정상 쪽지가 접히면 안 되니, 켜는 조건을 좁혔어요. 같은 발신자에게서 하루 3건 넘게 오고 경로가 없을 때만 접고, 경로가 있는 쪽지는 접지 않아요.</p>
+      <div class="row" style="margin-top:0">
+        <button class="btn ghost" id="nv-fold" style="font-size:12.5px">묶음 켜기</button>
+        <button class="btn ghost" id="nv-unfold" style="font-size:12.5px">묶음 끄기</button>
+      </div>
+      <div id="nv-foldbox" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card pad" style="grid-column:1/-1">
+      <h2 style="font-size:15px">경로는 무엇으로 확인하나</h2>
+      <p class="tiny muted">경로 한 줄이 어디서 나오는지 적었어요. 이 표는 규칙이고, 실제 서비스의 데이터 연동은 확인하지 못했어요.</p>
+      <table>
+        <thead><tr><th>경로 유형</th><th>확인하는 데이터</th><th>원글이 사라지면</th></tr></thead>
+        <tbody>
+          <tr><td>내 글에 달린 댓글에 답장</td><td>댓글 번호와 발신자의 답장 연결</td><td>경로를 확인하지 못한 상태로 바뀌고 다시 확인 버튼</td></tr>
+          <tr><td>내 댓글에 온 답장</td><td>댓글 작성자와 발신자 일치</td><td>같음</td></tr>
+          <tr><td>이웃이 보낸 쪽지</td><td>이웃 맺은 날과 방향</td><td>이웃이 풀리면 경로 없음으로 바뀜</td></tr>
+          <tr><td>모임에서 보낸 쪽지</td><td>모임 가입 기록</td><td>모임을 나가면 경로 없음으로 바뀜</td></tr>
+        </tbody>
+      </table>
+      <p class="small" style="margin-top:10px"><b>경로와 안전은 다릅니다.</b> 경로는 어디서 왔는지만 말해요. 댓글 이력이 있는 발신자도 위험한 링크를 보낼 수 있어서, 링크는 주소를 보여 주고 누르기 전에 확인하게 했어요. 이 문장을 목록 안내에도 붙였습니다.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="meta">sun-pickle · Pickle · Npossible 새판 시즌0 · 미션: 네이트 쪽지(vooy-builder 제안) · 출품물 CC BY-SA 4.0 / 코드 GPL-3.0</footer>
+</div>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var log = [];
+  var saved = {};
+
+  var NOTES = [
+    {
+      id:"n1", from:"서연", initial:"서", time:"오늘 14:20",
+      rel:{label:"이웃 3개월 · 주고받은 쪽지 5건", tone:"g"},
+      why:{text:"내 판 댓글에 답장 · 3일 전", tone:"g"},
+      preview:"혹시 문정동 헬스장 얘기하신 분이죠? 저도 같은 곳 다니는데…",
+      body:"혹시 문정동 헬스장 얘기하신 분이죠? 저도 같은 곳 다니는데 시간대가 겹치는 것 같아서요. 내일 아침에도 가시나요?",
+      chain:[
+        {t:"11/18", b:"내 댓글", s:"‘동네 헬스장 3개월 다닌 후기’ 글에 “저도 문정동인데 시간대 궁금해요”"},
+        {t:"11/19", b:"서연 님의 글", s:"같은 글에 답글 “아침 7시가 한산해요”"},
+        {t:"오늘 14:20", b:"이 쪽지", s:"그 답글에서 이어서 보냄", last:true}
+      ],
+      first:false
+    },
+    {
+      id:"n2", from:"판돌이", initial:"판", time:"어제 21:02",
+      rel:{label:"이웃의 이웃 · 이웃 0일", tone:"b"},
+      why:{text:"이웃의 이웃 · 어제", tone:"b"},
+      preview:"안녕하세요, 이웃으로 보고 인사드려요. 중고 거래 관련해서…",
+      body:"안녕하세요, 이웃으로 보고 인사드려요. 중고 거래 관련해서 여쭤볼 게 있어서 쪽지 드렸어요. 혹시 아직 거래하실 의향 있으실까요?",
+      chain:[
+        {t:"어제 20:55", b:"내 이웃 ‘도윤’ 님의 이웃 목록", s:"공개된 이웃 목록에서 찾음"},
+        {t:"어제 21:02", b:"이 쪽지", s:"경로: 이웃의 이웃", last:true}
+      ],
+      first:true
+    },
+    {
+      id:"n3", from:"동네주민", initial:"자", time:"오늘 09:41",
+      rel:{label:"처음 보는 사람 · 이웃 아님", tone:"n"},
+      why:{text:"내 전체 공개 글을 보고 · 오늘", tone:"b"},
+      preview:"글 잘 봤습니다. 저도 등록하려는데 3개월권 얼마였는지…",
+      body:"글 잘 봤습니다. 저도 등록하려는데 3개월권 얼마였는지 여쭤봐도 될까요?",
+      chain:[
+        {t:"11/21", b:"내 전체 공개 글", s:"‘동네 헬스장 3개월 다닌 후기’ — 판에 전체 공개로 올린 글"},
+        {t:"오늘 09:41", b:"이 쪽지", s:"그 글에서 쪽지 보내기", last:true}
+      ],
+      first:true
+    },
+    {
+      id:"n4", from:"이벤트안내", initial:"이", time:"오늘 07:12",
+      rel:{label:"처음 보는 사람 · 최근 7일 같은 발신자 3건", tone:"a"},
+      why:{text:"왜 왔는지 확인할 수 없어요, 스팸이라는 뜻은 아님 · 오늘", tone:"a"},
+      preview:"회원님께 특별 혜택을 드립니다. 아래 링크에서 확인해 주세요…",
+      body:"안녕하세요! 회원님께 특별 혜택을 드립니다. 아래 링크에서 확인해 주세요. [링크] event-2026…(접힘)",
+      chain:[
+        {t:"—", b:"경로 기록 없음", s:"발신자가 글·댓글·이웃을 거치지 않고 보냄. 서비스가 경로를 남기지 않은 경우도 있어 단정하지 않음"},
+        {t:"오늘 07:12", b:"이 쪽지", s:"본문에 외부 링크 포함 · 링크는 자동으로 열리지 않음", last:true}
+      ],
+      first:true, risky:true
+    }
+  ];
+
+  function clock(){ return new Date().toTimeString().slice(0,8); }
+  function addLog(text, detail){
+    log.push("· " + clock() + "  " + text + (detail ? "  — " + detail : ""));
+    $("log").textContent = log.length ? log.join("\n") : "(아직 아무 동작 없음)";
+    $("stepCount").textContent = String(log.length);
+    $("log").scrollTop = $("log").scrollHeight;
+  }
+  var toastTimer = null;
+  function toast(msg, undo){
+    var t = $("toast");
+    t.innerHTML = msg + (undo ? ' <button class="btn sm" id="undoBtn" style="margin-left:8px">되돌리기</button>' : "");
+    t.classList.add("on");
+    if(undo){ $("undoBtn").addEventListener("click", undo); }
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("on"); }, 6000);
+  }
+
+  function whyMark(tone){
+    var colors = {g:"#0b6b3a", b:"#14509e", a:"#b45309", r:"#b3261e"};
+    return '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7" stroke="'+colors[tone]+'" stroke-width="2" stroke-linecap="round"/></svg>';
+  }
+
+  function render(){
+    var list = $("list");
+    list.innerHTML = NOTES.map(function(n){
+      var open = !!saved[n.id];
+      var html = '<div class="note '+(open?"open":"")+'" id="note-'+n.id+'">';
+      html += '<button class="note-h" aria-expanded="'+open+'" aria-controls="body-'+n.id+'" aria-label="'+n.from+', '+n.time+', 왜 왔는지: '+n.why.text+'">';
+      html += '<span class="av" aria-hidden="true">'+n.initial+'</span>';
+      html += '<span style="flex:1">';
+      html += '<span class="nm">'+n.from+(n.first?' <span class="pill '+n.rel.tone+'">첫 쪽지</span>':'')+'</span>';
+      html += '<span class="tm">'+n.time+'</span>';
+      html += '<span class="pv">'+n.preview+'</span>';
+      html += '<span class="why '+n.why.tone+'">'+whyMark(n.why.tone)+n.why.text+'</span>';
+      html += '</span></button>';
+      html += '<div class="body" id="body-'+n.id+'" '+(open?"":"hidden")+'>';
+      html += '<p style="font-size:13.5px;margin:10px 0 0">'+n.body+'</p>';
+      if(n.risky){
+        html += '<div class="warnbox"><b>링크가 든 쪽지예요.</b> 누르기 전에 주소를 확인하세요. 이 쪽지는 경로가 남아 있지 않아 <b>왜 왔는지 확인할 수 없습니다</b>. 경로가 없다고 스팸이라는 뜻은 아니에요. 링크 주소를 먼저 확인하세요. 같은 발신자에게서 최근 7일간 3건이 왔어요.</div>';
+      }
+      html += '<ul class="chain" aria-label="왜 왔는지 경로">';
+      n.chain.forEach(function(c){
+        html += '<li'+(c.last?' class="last"':'')+'><span class="dot2" aria-hidden="true"></span><span><b>'+c.b+'</b> <span class="src">'+c.t+'</span><br><span class="src">'+c.s+'</span></span></li>';
+      });
+      html += '</ul>';
+      html += '<div class="evid"><b>관계 근거</b> — '+n.rel.label+'<br><span class="muted">숫자는 이 쪽지함에서 실제로 셀 수 있는 값만 씁니다. 점수·등급은 만들지 않아요.</span></div>';
+      html += '<div class="tiny" style="margin:10px 0 2px;font-weight:800;color:#8a4b12">신고를 누르면 이 발신자 차단도 함께 적용됩니다. 30초 안에 되돌릴 수 있어요.</div>';
+      html += '<div class="acts">';
+      html += '<button class="btn pri" data-act="reply" data-id="'+n.id+'">답장</button>';
+      if(n.first && !n.risky) html += '<button class="btn" data-act="neighbor" data-id="'+n.id+'">이웃 맺기</button>';
+      html += '<button class="btn" data-act="why" data-id="'+n.id+'">왜 왔는지 더 보기</button>';
+      html += '<button class="btn danger" data-act="block" data-id="'+n.id+'">차단</button>';
+      html += '<button class="btn danger" data-act="report" data-id="'+n.id+'">신고 (차단 함께)</button>';
+      html += '</div>';
+      html += '<div class="tiny muted" style="margin-top:8px">신고 화면에서 차단을 끌 수 있어요. 끄면 신고만 접수됩니다.</div>';
+      html += '<div class="report" id="rep-'+n.id+'" hidden><div class="tiny" style="font-weight:800">신고 이유를 하나 골라 주세요</div><div class="rr">';
+      ["광고·홍보","모르는 사람의 반복 발송","욕설·괴롭힘","사칭·사기 의심"].forEach(function(r){
+        html += '<button class="btn sm" data-reason="'+r+'" data-id="'+n.id+'">'+r+'</button>';
+      });
+      html += '</div>'+
+        '<label class="tiny" style="display:flex;gap:7px;align-items:center;margin-top:9px;font-weight:700">'+
+        '<input type="checkbox" id="withblock-'+n.id+'" checked> 차단도 함께 하기 (끄면 신고만 접수돼요)</label>'+
+        '<div class="tiny muted" style="margin-top:6px">신고는 접수만 되고, 제재는 별도 심사로 정해져요.</div></div>';
+      html += '</div></div>';
+      return html;
+    }).join("");
+    bind();
+  }
+
+  function bind(){
+    Array.prototype.forEach.call(document.querySelectorAll(".note-h"), function(btn){
+      btn.addEventListener("click", function(){
+        var note = btn.closest(".note");
+        var id = note.id.replace("note-","");
+        var body = document.getElementById("body-"+id);
+        var willOpen = body.hidden;
+        body.hidden = !willOpen;
+        note.classList.toggle("open", willOpen);
+        btn.setAttribute("aria-expanded", String(willOpen));
+        if(willOpen){
+          var n = NOTES.filter(function(x){return x.id===id;})[0];
+          addLog("쪽지 열기 — "+n.from, "경로를 먼저 봄: " + n.why.text);
+          saved[id] = true;
+        }
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-act]"), function(b){
+      b.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        var id = b.getAttribute("data-id"), act = b.getAttribute("data-act");
+        var n = NOTES.filter(function(x){return x.id===id;})[0];
+        if(act==="reply"){ addLog("답장 쓰기 — "+n.from); toast("답장 화면으로 이동했어요 (프로토타입)"); }
+        if(act==="neighbor"){
+          addLog("이웃 맺기 제안 — "+n.from);
+          toast("이웃 맺기를 제안했어요. 상대가 수락하면 이웃 공개 범위가 열려요.", function(){ addLog("이웃 맺기 취소", "되돌리기"); toast("되돌렸어요"); });
+        }
+        if(act==="why"){ addLog("경로 사슬 다시 읽기 — "+n.from, n.why.text); toast("경로: " + n.why.text + " · 근거: " + n.rel.label); }
+        if(act==="block"){
+          addLog("차단 — "+n.from, "30초 안에 되돌릴 수 있음");
+          toast("차단했어요. 이 사람의 쪽지는 다시 오지 않아요.", function(){ addLog("차단 취소", "되돌리기"); toast("차단을 되돌렸어요"); });
+        }
+        if(act==="report"){
+          var rep = document.getElementById("rep-"+id);
+          rep.hidden = !rep.hidden;
+          addLog("신고 이유 고르기 — "+n.from);
+          if(!rep.hidden) rep.querySelector("button").focus();
+        }
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-reason]"), function(b){
+      b.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        var id = b.getAttribute("data-id"), reason = b.getAttribute("data-reason");
+        var n = NOTES.filter(function(x){return x.id===id;})[0];
+        document.getElementById("rep-"+id).hidden = true;
+        var cb = document.getElementById("withblock-"+id);
+        var withBlock = cb ? cb.checked : true;
+        addLog("신고 접수 — "+n.from, "이유: "+reason+" · 차단 " + (withBlock ? "동시 적용" : "안 함"));
+        toast("신고를 접수했어요 ("+reason+")." + (withBlock ? " 이 발신자의 쪽지는 다시 받지 않습니다." : " 차단은 하지 않았어요."),
+          function(){
+            addLog("신고 취소" + (withBlock ? " · 차단도 함께 해제" : ""), "되돌리기");
+            toast("되돌렸어요" + (withBlock ? " — 차단도 함께 풀었어요" : ""));
+          });
+      });
+    });
+  }
+
+  $("btnSR").addEventListener("click", function(){
+    var box = $("srBox");
+    box.hidden = !box.hidden;
+    if(!box.hidden){
+      box.innerHTML = '<b>목록 한 줄이 읽히는 문장</b><br>' +
+        '“보낸 사람 이벤트안내, 오늘 07시 12분, 왜 왔는지: 왜 왔는지 확인할 수 없어요, 본문 일부: 회원님께 특별 혜택을…, 안 읽음. 쪽지 열기.”<br><br>' +
+        '<b>경로 사슬 읽기</b><br>“경로 1. 경로 기록 없음. 발신자가 글·댓글·이웃을 거치지 않고 보냄. 경로 2. 오늘 07시 12분, 이 쪽지, 본문에 외부 링크 포함.”';
+      addLog("화면 낭독기 문장 확인");
+    }
+  });
+
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"],["t7","p7"]];
+  function selectTab(id){
+    tabs.forEach(function(p){
+      var on = p[0]===id;
+      $(p[0]).setAttribute("aria-selected", String(on));
+      $(p[1]).hidden = !on;
+    });
+  }
+  tabs.forEach(function(p,i){
+    var btn = $(p[0]);
+    btn.addEventListener("click", function(){ selectTab(p[0]); window.scrollTo({top:0,behavior:"smooth"}); });
+    btn.addEventListener("keydown", function(e){
+      var n=null;
+      if(e.key==="ArrowRight") n = tabs[(i+1)%tabs.length];
+      if(e.key==="ArrowLeft") n = tabs[(i+tabs.length-1)%tabs.length];
+      if(n){ e.preventDefault(); selectTab(n[0]); $(n[0]).focus(); }
+    });
+  });
+
+  if($("stale-toggle")){
+    var stale = false;
+    $("stale-toggle").addEventListener("click", function(){
+      stale = !stale;
+      if(stale){
+        $("stale-step").textContent = "서연 님의 글 · 비공개로 바뀜";
+        $("stale-desc").textContent = "내가 볼 수 없는 글이에요. 제목·내용은 표시하지 않습니다.";
+        $("stale-why").textContent = "내 판 댓글에 답장 · 3일 전 (원본 일부 확인 불가)";
+        $("stale-why").style.color = "#5c6470";
+        $("stale-note").innerHTML = "경로 원본이 비공개가 되면 <b>제목·본문을 지우고</b> ‘경로 원본이 바뀜’으로 내립니다. 경로 전체를 지우지는 않아요(내 댓글 사실은 남음).";
+        addLog("(데모) 원본 글 비공개 전환", "경로 원본 → ‘경로 원본이 바뀜’");
+      } else {
+        $("stale-step").textContent = "서연 님의 글";
+        $("stale-desc").textContent = "같은 글에 답글 “아침 7시가 한산해요”";
+        $("stale-why").textContent = "내 판 댓글에 답장 · 3일 전";
+        $("stale-why").style.color = "#0b6b3a";
+        $("stale-note").textContent = "";
+        addLog("(데모) 원본 글 다시 공개", "경로 복원");
+      }
+      $("stale-toggle").textContent = stale ? "원래 상태로 되돌리기" : "원본 글이 비공개로 바뀐 상황 보기";
+    });
+  }
+
+  render();
+})();
+
+</script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var line = $("nv-line");
+  if(!line) return;
+
+  var STATE = {
+    ok:{txt:"내 판 댓글에 답장 · 3일 전", bg:"#e8f2ff", fg:"#1a4fa0",
+        sub:"경로가 있어요. 내 댓글, 상대 글, 이 쪽지 순서로 날짜와 함께 보여 줘요."},
+    gone:{txt:"원글을 확인할 수 없어 경로를 확인하지 못했어요", bg:"#eef1f5", fg:"#3d4552",
+        sub:"원글이 지워졌어요. 저장해 둔 경로를 그대로 보여 주지 않고 다시 확인하도록 바꿉니다."},
+    hidden:{txt:"원글이 비공개로 바뀌어 경로를 확인하지 못했어요", bg:"#fff4e5", fg:"#8a4b12",
+        sub:"원글 작성자가 공개 범위를 좁혔어요. 경로 문구도 함께 바뀌어야 해요."}
+  };
+  var cur = "ok";
+  function draw(){
+    var s = STATE[cur];
+    line.textContent = s.txt;
+    line.style.background = s.bg;
+    line.style.color = s.fg;
+    $("nv-sub").textContent = s.sub;
+    $("nv-recheck").style.display = cur === "ok" ? "none" : "";
+    $("nv-out").textContent = "";
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-nv]"), function(b){
+    b.addEventListener("click", function(){
+      cur = b.getAttribute("data-nv");
+      draw();
+    });
+  });
+  $("nv-recheck").addEventListener("click", function(){
+    $("nv-out").textContent = "다시 확인했어요. 원글이 아직 없으면 이 문구를 유지하고, 확인이 끝나면 목록에 알려 줘요. 이 상자에서는 상태만 바뀝니다.";
+  });
+
+  var folded = false;
+  function drawFold(){
+    var box = $("nv-foldbox");
+    if(!folded){
+      box.innerHTML = "<div class='tiny muted'>묶음이 꺼져 있어요. 쪽지가 목록에 그대로 있어요.</div>";
+      return;
+    }
+    box.innerHTML =
+      "<div style='border:1px solid var(--line);border-radius:11px;padding:10px 12px'>" +
+      "<div style='font-size:13px;font-weight:800'>확인 필요 3건, 그중 안 읽음 2건</div>" +
+      "<div class='tiny muted' style='margin-top:4px'>같은 발신자에게서 하루 3건 넘게 왔고 경로가 없는 쪽지만 접혔어요. 경로가 있는 쪽지 2건은 목록에 그대로 있어요.</div>" +
+      "<ul class='tiny' style='margin:8px 0 0'>" +
+      "<li>이벤트안내 · 경로 없음 · 안 읽음</li>" +
+      "<li>이벤트안내 · 경로 없음 · 안 읽음</li>" +
+      "<li>이벤트안내 · 경로 없음 · 읽음</li>" +
+      "</ul></div>";
+  }
+  $("nv-fold").addEventListener("click", function(){ folded = true; drawFold(); });
+  $("nv-unfold").addEventListener("click", function(){ folded = false; drawFold(); });
+
+  draw();
+  drawFold();
+})();
+
+</script>
+</body>
+</html>

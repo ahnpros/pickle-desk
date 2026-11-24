@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>기억 조각으로 찾기 — 단어가 아니라 맥락으로 | sun-pickle</title>
+<style>
+  :root{
+    --bg:#f6f7f9;--card:#fff;--ink:#15181d;--muted:#5c6471;--line:#e3e7ec;
+    --p:#6b4ef2;--p-soft:#efeaff;--green:#0f9d58;--green-soft:#e7f7ee;
+    --amber:#b45309;--amber-soft:#fff6e8;--focus:#1a73e8;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 12px 30px -20px rgba(16,24,40,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.62 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:26px 18px 80px}
+  header.top{background:#fff;border-bottom:1px solid var(--line)}
+  .top-in{max-width:1120px;margin:0 auto;padding:18px 18px 12px}
+  .kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  h1{font-size:26px;line-height:1.28;margin:6px 0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  nav.tabs{max-width:1120px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow:auto}
+  nav.tabs button{border:0;background:none;padding:13px 12px;font:inherit;font-weight:700;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+  nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--p)}
+  nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:6px 6px 0 0}
+  section[role="tabpanel"][hidden]{display:none}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  h2{font-size:17px;margin:0 0 10px}h3{font-size:14px;margin:16px 0 6px}
+  p{margin:0 0 10px}ul,ol{margin:0 0 10px;padding-left:20px}li{margin:3px 0}
+  .muted{color:var(--muted)}.small{font-size:13.5px}.tiny{font-size:12px}
+  code{background:#f1f3f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:800}
+  .pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800}
+  .pill.p{background:var(--p-soft);color:#4b2fd0}.pill.g{background:var(--green-soft);color:#0b6b3a}
+  .pill.a{background:var(--amber-soft);color:var(--amber)}.pill.n{background:#eef1f5;color:#3d4552}
+
+  .searchbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+  .searchbox label{font-size:12px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px}
+  .qrow{display:flex;gap:8px}
+  .qrow input{flex:1;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font:inherit;font-size:15px;outline:none}
+  .qrow input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+  .qrow button{border:0;border-radius:12px;background:var(--p);color:#fff;font:inherit;font-weight:800;padding:0 18px;cursor:pointer}
+  .qrow button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .ex{border:1px solid var(--line);background:#fbfbfd;border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer;color:#3d4552}
+  .ex:hover{background:var(--p-soft);border-color:#d9cffd}
+  .facets{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+  .facet{display:flex;align-items:center;gap:6px;font-size:12.5px}
+  .facet span.lb{font-weight:800;color:var(--muted)}
+  .facet select{border:1px solid var(--line);border-radius:9px;padding:5px 8px;font:inherit;font-size:12.5px;background:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{border:1px solid #d9cffd;background:var(--p-soft);color:#3f21b8;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer}
+  .chip.off{background:#fff;border-color:var(--line);color:var(--muted);text-decoration:line-through}
+  .res{margin-top:14px;display:grid;gap:10px}
+  .item{border:1px solid var(--line);border-radius:13px;padding:13px 14px;background:#fff}
+  .item .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+  .item h3{margin:5px 0 4px;font-size:15px}
+  .item .snip{font-size:13.5px;color:#333b45}
+  .item mark{background:#fff2a8;color:inherit;padding:0 1px;border-radius:3px}
+  .whybox{margin-top:9px;border-top:1px dashed var(--line);padding-top:8px;font-size:12px;color:var(--muted)}
+  .whybox b{color:var(--ink)}
+  .scorebar{height:5px;border-radius:3px;background:#eef0f4;overflow:hidden;margin-top:8px}
+  .scorebar i{display:block;height:100%;background:linear-gradient(90deg,#8b73f8,#6b4ef2)}
+  .empty{border:1px dashed var(--line);border-radius:13px;padding:18px;text-align:center;color:var(--muted);font-size:13.5px}
+  .log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.7;background:#12101c;color:#d8d3f5;border-radius:10px;padding:10px 12px;max-height:170px;overflow:auto;margin:0;white-space:pre-wrap}
+  .callout{border-left:3px solid var(--p);background:var(--p-soft);padding:10px 12px;border-radius:0 10px 10px 0;font-size:13.5px;margin:12px 0}
+  .callout.warn{border-color:#f59e0b;background:var(--amber-soft)}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+  .kpi div{border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+  .kpi b{display:block;font-size:13px}.kpi span{font-size:12px;color:var(--muted)}
+  footer.meta{max-width:1120px;margin:0 auto;padding:6px 18px 40px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="kicker">sun-pickle · Npossible 새판 시즌0 · 공식 미션 <b id="missionId">news</b></div>
+    <h1>검색어가 기억 안 날 때 — 단어 대신 <span style="background:linear-gradient(transparent 62%,#d8ccff 0)">맥락</span>으로 찾기</h1>
+    <p class="sub">“그거 뭐였지”만 남아도 찾아지게. 언제·어디서·누가·무슨 말투였는지를 입력으로 받고, 왜 이 결과인지 함께 보여 줍니다. <b>이 페이지의 검색은 실제로 동작합니다.</b></p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="출품작 구성">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true">① 체험 (실제 검색)</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false">② 문제 근거</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false">③ 명세·엣지케이스</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false">④ 지표·검증·한계</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false">⑤ 품질 측정</button>
+    <button role="tab" id="t6" aria-controls="p6" aria-selected="false">⑥ 지난 라운드 반영</button>
+    <button role="tab" id="t7" aria-controls="p7" aria-selected="false">⑦ 이번 라운드 반영</button>
+  </nav>
+</header>
+
+<div class="wrap">
+<section role="tabpanel" id="p1" aria-labelledby="t1">
+  <div class="searchbox" style="margin-top:22px">
+    <label for="q">기억나는 대로 적어 보세요 (문장이어도 됩니다)</label>
+    <div class="qrow">
+      <input id="q" type="search" placeholder="예: 겨울에 본 기사인데 전세 대출 금리 얘기였고 숫자가 3%대였어" autocomplete="off">
+      <button id="go">찾기</button>
+    </div>
+    <div class="examples" id="examples"></div>
+    <div class="facets">
+      <label class="facet"><span class="lb">언제</span>
+        <select id="f-when">
+          <option value="any">기억 안 남</option>
+          <option value="7">최근 7일</option>
+          <option value="30">최근 1달</option>
+          <option value="365">최근 1년</option>
+        </select>
+      </label>
+      <label class="facet"><span class="lb">어디서</span>
+        <select id="f-where">
+          <option value="any">전체</option>
+          <option value="뉴스">뉴스</option>
+          <option value="판">판</option>
+          <option value="쪽지">쪽지</option>
+          <option value="검색기록">내 검색 기록</option>
+        </select>
+      </label>
+      <label class="facet"><span class="lb">누가</span>
+        <select id="f-who">
+          <option value="any">기억 안 남</option>
+          <option value="기사">기사·보도</option>
+          <option value="사람">사람이 쓴 글</option>
+        </select>
+      </label>
+      <span class="tiny muted" style="align-self:center">예시 자료 <b id="corpusCount">0</b>건에서 찾습니다</span>
+    </div>
+    <div id="chipArea" hidden>
+      <div class="tiny muted" style="margin-top:12px;font-weight:800">이 조각으로 찾고 있어요 — 빼려면 눌러서 끄세요</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 330px;gap:22px;align-items:start;margin-top:16px" class="layout">
+    <div>
+      <div class="res" id="results"></div>
+    </div>
+    <div>
+      <div class="card pad">
+        <h2 style="font-size:15px">이 검색이 하는 일</h2>
+        <ul class="tiny" style="color:#3d4552;padding-left:18px">
+          <li>문장에서 <b>조각</b>을 뽑습니다(명사 후보·숫자·기간 표현).</li>
+          <li>조각마다 제목·본문·태그에 가중치를 두고 점수를 냅니다.</li>
+          <li>‘언제’는 <b>감쇠</b>로만 씁니다 — 오래된 것도 순위에서 사라지지 않게.</li>
+          <li>결과마다 <b>왜 이 결과인지</b>와 맞은 조각을 표시합니다.</li>
+        </ul>
+        <div class="tiny muted" style="margin-top:6px">※ 예시 자료는 제가 만든 30건입니다. 실제 네이트 검색 로그가 아닙니다.</div>
+      </div>
+      <div class="card pad" style="margin-top:14px">
+        <h2 style="font-size:15px">내 검색 기록</h2>
+        <pre class="log" id="log">(아직 검색 없음)</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>왜 ‘검색어를 못 만드는 것’이 문제인가</h2>
+    <p class="small">검색은 <b>단어를 정확히 아는 사람</b>에게 잘 맞춰져 있습니다. 그런데 다시 찾고 싶은 것은 대개 단어가 아니라 장면으로 기억납니다 — “겨울에, 지하철에서, 누가 말했는데, 숫자가 3%대였어”. 이때 사용자는 검색창 앞에서 멈춥니다. 검색을 못 하는 게 아니라 <b>질의를 만들지 못하는</b> 것입니다.</p>
+    <table>
+      <thead><tr><th style="width:31%">기억에 남는 것</th><th style="width:30%">지금 검색창이 받는 것</th><th>이 안이 받는 것</th></tr></thead>
+      <tbody>
+        <tr><td>“겨울쯤”, “작년 말”</td><td>날짜 필터를 따로 열어야 함</td><td>문장 안의 시간 표현을 읽어 <b>기간 후보</b>로 제안</td></tr>
+        <tr><td>“기사였는지 판 글이었는지”</td><td>전체 검색 → 결과가 섞임</td><td>‘어디서’ 한 번으로 좁힘 + 결과 카드에 출처 표시</td></tr>
+        <tr><td>“3%대 숫자”</td><td>“3%”로 검색하면 잡음이 많음</td><td>숫자·단위를 따로 조각으로 뽑아 <b>본문 매칭</b>에 사용</td></tr>
+        <tr><td>“누가 말했는지”</td><td>없음</td><td>기사·사람 글 구분</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn small"><b>미션 경계.</b> ‘읽던 뉴스를 다시 찾는’ 기록 자동 저장(다른 미션)이 아니라, <b>질의를 만들지 못하는 순간의 입력 방식</b>입니다. 방문 기록이 없어도, 다른 기기에서 봤어도 동작해야 하므로 입력 자체를 바꿉니다.</div>
+    <p class="tiny muted">※ 위 관찰은 일반적인 검색 사용 경험에서 출발한 문제 정의이며, 네이트 사용자 로그로 검증한 수치는 아닙니다. 검증 계획은 ④에 적었습니다.</p>
+  </div>
+</section>
+
+<section role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>질의 → 조각 → 결과의 흐름</h2>
+    <pre class="log" style="max-height:none;font-size:12px;color:#d8d3f5">[입력] "겨울에 본 기사인데 전세 대출 금리 3%대"
+   ├ 조각 추출   : 전세, 대출, 금리, 3%, 겨울(시간 표현)
+   ├ 시간 해석   : "겨울" → 1년 범위 후보(사용자가 끌 수 있음)
+   ├ 필드 가중치 : 제목 3.0 · 태그 2.0 · 본문 1.0
+   ├ 점수        : 조각별 (정확 일치 1.0 / 부분 일치 0.4) × 필드 가중치 합
+   └ 시간 감쇠   : score × (1 + 0.15 × 최근성) — 오래된 문서를 지우지 않음
+[결과] 카드마다 맞은 조각을 하이라이트 + "왜 이 결과인지" 한 줄
+[실패] 조각이 하나도 안 맞으면 → "기억 조각을 바꿔 보세요"와 함께 자주 쓰는 조각 제안</pre>
+
+    <h3>화면 규칙</h3>
+    <ul class="small">
+      <li>결과를 <b>숨기지 않습니다.</b> 상위 5개는 항상 보이고, 점수는 막대와 숫자로 함께 표시(왜 1등인지 확인 가능).</li>
+      <li>조각 칩은 <b>끄고 켤 수 있습니다.</b> 자동 해석이 틀렸을 때 사용자가 바로 고칠 수 있어야 자동화가 실패해도 검색이 망가지지 않습니다.</li>
+      <li>시간은 <b>감쇠만</b>. “최근 것만” 같은 강한 필터는 사용자가 고를 때만.</li>
+      <li>출처(뉴스/판/쪽지/검색기록)를 항상 표시 — 같은 사건이라도 출처가 다르면 신뢰가 다릅니다.</li>
+    </ul>
+
+    <h3>엣지케이스</h3>
+    <table>
+      <thead><tr><th style="width:27%">상황</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>조각이 전부 흔한 단어(“그거”, “있잖아”)</td><td>점수 계산 대신 “무엇을 찾는지 한 조각만 더 알려 주세요”로 되묻고, 최근 항목을 보여 줌</td></tr>
+        <tr><td>시간 표현이 모호함(“얼마 전”, “한참 전”)</td><td>기간을 단정하지 않고 후보 2개(“최근 1달 / 최근 1년”)를 칩으로 제안</td></tr>
+        <tr><td>같은 사건 여러 출처</td><td>중복 묶음 — 대표 1건 + “비슷한 결과 3건” 접기</td></tr>
+        <tr><td>개인 기록(쪽지·검색기록)</td><td>본인 것만 검색. 결과 카드에도 ‘내 기록’ 표시, 공유 링크 생성 불가</td></tr>
+        <tr><td>오타·띄어쓰기</td><td>한글 2글자 단위 부분 일치로 흡수(‘전새대출’ → ‘전세대출’과 부분 일치)</td></tr>
+        <tr><td>결과 0건</td><td>“없어요”로 끝내지 않고, 맞은 조각 수 · 가장 가까운 1건 · 조각 제안을 보여 줌</td></tr>
+        <tr><td>느린 회선</td><td>입력 중 300ms 디바운스 후 1회 요청, 이전 결과 유지(화면 비우지 않음)</td></tr>
+        <tr><td>키보드·낭독기</td><td>결과 개수를 <code>aria-live</code>로 알림(“결과 3건”), 카드마다 제목·출처·날짜를 한 문장으로</td></tr>
+      </tbody>
+    </table>
+
+    <h3>부작용</h3>
+    <ul class="small">
+      <li><b>자동 해석이 틀리면 더 나빠짐</b> — 조각 칩을 끌 수 있게 하고, 해석을 화면에 그대로 노출.</li>
+      <li><b>개인정보</b> — 쪽지·검색기록은 본인 범위 안에서만. 서버 로그에 질의 원문을 남길 때는 목적·보관 기간을 명시(가능하면 조각만 저장).</li>
+      <li><b>연산 비용</b> — 조각 추출은 질의당 1회, 캐시 가능. 결과 개인화는 넣지 않음(설명 가능성 우선).</li>
+    </ul>
+  </div>
+</section>
+
+<section role="tabpanel" id="p4" aria-labelledby="t4" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>지금 확인되는 것 / 확인해야 할 것</h2>
+    <div class="callout small"><b>이 페이지에서 실제로 확인 가능한 것.</b> 아래 검색창은 예시 자료 30건에 대해 <b>정말로 동작합니다.</b> 문장을 넣으면 조각이 뽑히고, 점수·근거와 함께 결과가 나옵니다. 다만 자료가 30건이라 ‘검색 품질’의 증거가 아니라 <b>동작·설명 가능성의 증거</b>입니다.</div>
+    <h3>이벤트</h3>
+    <table>
+      <thead><tr><th style="width:33%">이벤트</th><th style="width:24%">시점</th><th>쓰임</th></tr></thead>
+      <tbody>
+        <tr><td><code>query_submit</code> (원문 길이 구간)</td><td>검색 실행</td><td>문장형 질의 비율</td></tr>
+        <tr><td><code>fragment_toggle</code></td><td>조각 칩 끄기/켜기</td><td>자동 해석 오류율의 대리 지표</td></tr>
+        <tr><td><code>result_click</code> / <code>result_open_rank</code></td><td>결과 클릭</td><td>상위 3개 안에서 찾은 비율</td></tr>
+        <tr><td><code>requery_within_30s</code></td><td>30초 내 재검색</td><td>첫 결과 실패율</td></tr>
+        <tr><td><code>zero_result</code></td><td>0건</td><td>조각 추출 실패 감시</td></tr>
+      </tbody>
+    </table>
+    <div class="kpi">
+      <div><b>상위 3개 내 클릭률</b><span>목표 70% 이상</span></div>
+      <div><b>30초 내 재검색률</b><span>가드레일 35% 이하</span></div>
+      <div><b>0건 비율</b><span>5% 이하</span></div>
+      <div><b>조각 끄기 비율</b><span>20% 초과 시 해석 규칙 재검토</span></div>
+    </div>
+    <h3>검증 설계</h3>
+    <ul class="small">
+      <li>실제 로그 1만 건으로 <b>오프라인 평가</b>: 같은 질의에 대해 키워드 검색 vs 조각 검색의 상위 3개 적중률 비교(정답 라벨은 사람 2명이 붙임).</li>
+      <li>소규모 사용성 테스트 5명: “지난달에 본 글 다시 찾기” 과제로 성공률·소요 시간 측정.</li>
+      <li>A/B: 현행 검색 / 조각 입력. 주 지표 상위3 클릭률, 보조 재검색률.</li>
+    </ul>
+    <h3>아직 확인하지 못한 것</h3>
+    <ul class="small">
+      <li>한국어 조각 추출의 실제 품질 — 지금 구현은 규칙 기반(공백·2글자 bigram)이고 형태소 분석기가 아닙니다.</li>
+      <li>자료 30건은 손으로 만든 예시라 실제 문서 분포(길이·중복·표제어)와 다릅니다.</li>
+      <li>감쇠 계수 0.15는 근거 있는 값이 아니라 <b>조정 가능한 초기값</b>입니다.</li>
+      <li>네이트 검색의 실제 랭킹·색인 구조 — 확인하지 못해 ‘대체’가 아니라 ‘입력층’ 제안으로 범위를 좁혔습니다.</li>
+    </ul>
+  </div>
+</section>
+
+
+<section role="tabpanel" id="p5" aria-labelledby="t5" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>왜 두 방식을 나란히 재는가</h2>
+    <p class="small muted">이 검색은 ‘일반 키워드 검색보다 낫다’고 주장하지 않습니다. 대신 같은 질의를 키워드 일치 방식과 조각 방식으로 함께 돌려, 어디서 갈리는지 페이지 안에서 보여 줍니다. 정답 라벨은 제가 붙였고 자료도 제가 쓴 30건이라, 이 표는 성능 주장이 아니라 동작 확인입니다.</p>
+    <ul class="small">
+      <li>조사와 어미가 붙은 문장형 질의에서 두 방식이 어떻게 갈리는지 본다.</li>
+      <li>0건으로 끝나는 질의가 얼마나 되는지 본다.</li>
+      <li>결과마다 왜 나왔는지 보이는지 확인한다.</li>
+    </ul>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>지금 이 자리에서 잰 결과 (라벨 질의 10건 · 자료 30건)</h2>
+    <div id="benchSummary"></div>
+    <div id="benchTable" style="margin-top:8px"></div>
+    <div class="callout warn small" style="margin-top:12px">
+      <b>이 숫자의 한계를 먼저 말합니다.</b> 정답 라벨은 제가 붙였고, 자료는 제가 쓴 30건입니다. 실제 네이트 문서 분포(길이·중복·표제어·광고)와 다르며, 표본이 작아 <b>‘조각 검색이 더 낫다’는 일반 주장의 근거가 아닙니다.</b> 이 표가 보이는 것은 <b>같은 조건에서 두 방식이 어떻게 갈리는지</b>입니다. 자료를 늘린 시험은 바로 아래에서 직접 돌릴 수 있습니다. 실제 로그 1만 건 평가는 아직 못 했습니다.
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>자료를 늘려서 같은 질의를 다시 재기</h2>
+    <p class="small muted">정답 문서 30건은 그대로 두고, 같은 주제의 다른 문서 270건을 더해 봅니다. 정답이 다른 문서에 묻히는지 보는 시험입니다.</p>
+    <div class="row" style="margin-top:0"><button class="btn pri" id="scaleRun">자료 270건 더하고 다시 재기</button></div>
+    <div id="scaleOut" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>쪽지와 검색 기록을 넣을 때의 권한과 삭제</h2>
+    <table>
+      <thead><tr><th style="width:28%">항목</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>검색 범위</td><td>이용자가 볼 수 있는 글만 찾습니다. 남의 비공개 글과 쪽지는 색인에 넣지 않습니다. 쪽지는 보낸 사람과 받은 사람 양쪽이 볼 수 있는 것만입니다.</td></tr>
+        <tr><td>원본이 지워지면</td><td>색인에서도 지웁니다. 원본 삭제를 확인한 시점에 색인 항목을 지우고, 검색 결과에 흔적을 남기지 않습니다.</td></tr>
+        <tr><td>공개 범위가 바뀌면</td><td>비공개로 바뀐 글은 다음 조회 때 색인에서 빠집니다. 이미 본 검색 기록에는 제목을 남기지 않습니다.</td></tr>
+        <tr><td>비용</td><td>색인 갱신은 원본이 바뀔 때만 합니다. 검색은 규칙 기반이라 질의당 모델 호출이 없습니다. 규모가 커지면 색인 크기와 응답 시간이 늘어나는 것이 남는 부담입니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>바꾸지 않은 것</h2>
+    <ul class="small">
+      <li><b>랭킹 모델을 키우지 않았습니다.</b> 설명 가능성(왜 이 결과인지)을 먼저 지키는 것이 이 안의 주장이므로, 학습 기반 재정렬은 넣지 않았습니다.</li>
+      <li><b>개인화를 넣지 않았습니다.</b> 같은 질의에 같은 결과가 나와야 검증·디버깅이 됩니다.</li>
+      <li><b>결과 개수를 부풀리지 않았습니다.</b> 관련 없는 문서를 채워 넣지 않고, 없으면 없다고 보여 줍니다.</li>
+    </ul>
+  </div>
+</section>
+
+<section role="tabpanel" id="p6" aria-labelledby="t6" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>처음 낸 검색에서 받은 반응과 고친 것</h2>
+    <table>
+      <thead><tr><th style="width:38%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr><td>사용자 패널 둘 다 “예시가 30건이라 실제 뉴스나 판에서도 잘 찾을지 궁금하다”</td><td>정답 문서 30건은 그대로 두고 같은 주제의 다른 문서 270건을 더해 같은 질의 10건을 다시 채점하는 버튼을 넣었습니다. 방금 돌린 결과는 <b>조각 검색 hit@1 10/10, hit@3 10/10, 0건 0</b>입니다. 늘어난 자료도 제가 만든 것이라는 점은 그 자리에 적었습니다. <b>[다섯째 탭]</b></td></tr>
+        <tr><td>리뷰어 “형태소 정리와 필드 가중치에 기반한 단어 매칭이고, 30건과 라벨 10건만으로는 키워드 검색보다 낫다고 판단하기 어렵다”</td><td>이 검색이 <b>단어 매칭</b>이라는 점을 먼저 적었습니다. 같은 자료에서 키워드 방식과 나란히 채점하고, 300건에서도 두 방식을 함께 돌립니다. 조각 검색이 더 낫다는 일반 주장은 하지 않습니다.</td></tr>
+        <tr><td>운영감사 “실제 색인 규모의 응답 속도와 품질, 쪽지와 검색 기록 연동 시 접근 권한과 삭제 동기화 부담”</td><td>300건에서 질의 10건을 두 방식으로 돌린 <b>합계 시간을 화면에 표시</b>합니다. 방금 값은 114ms였습니다. 쪽지와 검색 기록의 접근 범위와 원본 삭제 시 색인 삭제, 공개 범위 변경 시 색인 제외 규칙을 다섯째 탭 표에 적었습니다. <b>[다섯째 탭]</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>바꾸지 않은 것</h2>
+    <ul class="small">
+      <li><b>학습 기반 재정렬을 넣지 않았습니다.</b> 왜 나왔는지 보이는 것이 이 안의 중심입니다.</li>
+      <li><b>300건을 실제 색인이라고 쓰지 않았습니다.</b> 제가 만든 문서로 정답이 묻히는지만 보는 시험입니다.</li>
+      <li><b>쪽지와 검색 기록 검색을 켜 두지 않았습니다.</b> 예시 자료 안에서만 동작하고, 실제 연동은 권한 규칙만 적었습니다.</li>
+    </ul>
+  </div>
+</section>
+<section role="tabpanel" id="p7" aria-labelledby="t7" hidden>
+  <div class="card pad" style="margin-top:22px">
+    <h2>이번 라운드에서 받은 반응과 바꾼 것</h2>
+    <p class="small muted">사용자 패널 둘, 리뷰어, 운영감사가 남긴 문장과 그에 대응해 이번에 더한 것이에요. 리뷰어가 이번 라운드 개선점이 분명하지 않다고 했으니, 바꾼 것과 바꾸지 않은 것을 나눠 적었습니다.</p>
+    <table>
+      <thead><tr><th style="width:36%">받은 반응</th><th>바꾼 것</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>일반 사용자와 파워유저 “자체 자료 말고 실제 기사에서도 얼마나 잘 찾는지 궁금해요”</td>
+          <td>내 문서로 확인 상자를 넣었어요. 기사 제목과 본문을 붙여 넣고 같은 질의를 넣으면, 같은 가중치로 점수와 맞은 조각을 계산해 보여 줘요. 다만 붙여 넣은 문서는 이 상자 안에서만 쓰고 페이지 색인에는 넣지 않아요.</td>
+        </tr>
+        <tr>
+          <td>리뷰어 “이번 라운드에서 무엇을 개선했는지 불분명하고, 300건으로 늘려도 실제 질의에서 키워드 검색보다 나은지 판단하기 어렵다”</td>
+          <td>이 표가 이번에 바꾼 것이에요. 성능 우위 주장은 하지 않아요. 같은 자료에서 두 방식이 갈리는 지점을 보여 주는 데까지만 갔습니다.</td>
+        </tr>
+        <tr>
+          <td>운영감사 “문서가 늘면 태그 정비와 가중치 조정에 운영 공수가 들 수 있다”</td>
+          <td>가중치를 직접 바꿔 보는 슬라이더를 넣었어요. 제목, 태그, 본문 가중치를 움직이면 같은 문서의 점수가 바로 바뀌어요. 값 하나를 바꾸는 데도 문서를 다시 확인해야 한다는 점을 이 상자에서 보여 줘요.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2>내 문서로 확인</h2>
+    <p class="tiny muted">실제 기사 본문을 붙여 넣고 기억나는 문장을 넣어 보세요. 이 상자는 그 문서 한 건에 조각 점수를 계산해요. 정답을 아는 자료가 아니라서 잘 찾았는지는 다른 문제이고, 이 화면은 점수와 근거가 어떻게 나오는지만 보여 줘요.</p>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <label class="tiny" style="font-weight:800" for="fv-title">제목</label>
+        <input id="fv-title" type="text" placeholder="전세대출 금리 3%대 진입" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px">
+        <label class="tiny" style="font-weight:800" for="fv-tags">태그</label>
+        <input id="fv-tags" type="text" placeholder="전세대출 금리 은행" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px">
+        <label class="tiny" style="font-weight:800" for="fv-body">본문</label>
+        <textarea id="fv-body" rows="5" placeholder="본문을 붙여 넣으세요." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px"></textarea>
+      </div>
+      <div>
+        <label class="tiny" style="font-weight:800" for="fv-q">기억나는 문장</label>
+        <input id="fv-q" type="text" placeholder="겨울에 본 전세 대출 금리 3%대" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;margin:4px 0 10px">
+        <div class="tiny" style="font-weight:800;margin-top:4px">가중치</div>
+        <div class="tiny muted">제목 <b id="fv-wt">3.0</b></div>
+        <input id="fv-w1" type="range" min="1" max="5" step="0.5" value="3" style="width:100%">
+        <div class="tiny muted">태그 <b id="fv-wg">2.0</b></div>
+        <input id="fv-w2" type="range" min="1" max="5" step="0.5" value="2" style="width:100%">
+        <div class="tiny muted">본문 <b id="fv-wb">1.0</b></div>
+        <input id="fv-w3" type="range" min="0.5" max="3" step="0.5" value="1" style="width:100%">
+        <div class="row" style="margin-bottom:0"><button class="btn pri" id="fv-run" style="font-size:13px">점수 보기</button></div>
+      </div>
+    </div>
+    <div id="fv-out" class="tiny" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<footer class="meta">sun-pickle · Pickle · Npossible 새판 시즌0 · 공식 미션 news · 출품물 CC BY-SA 4.0 / 코드 GPL-3.0 · 예시 자료는 창작</footer>
+</div>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ---- sample corpus (창작 예시) ----
+  var DOCS = [
+    {id:1, date:"2026-11-20", src:"뉴스", who:"기사", title:"전세대출 금리 다시 3%대… 은행권 문턱 낮춰", body:"주요 은행이 전세자금대출 금리를 0.2%p 내리면서 3%대 진입이 늘었다. 보증기관 한도도 함께 조정돼 실수요자 부담이 줄어들 전망이다.", tags:"전세 대출 금리 은행 부동산"},
+    {id:2, date:"2026-02-11", src:"판", who:"사람", title:"전세 계약 앞두고 은행 세 곳 다녀온 후기", body:"금리는 3.4%에서 3.1%까지 차이가 났어요. 보증료까지 따져야 실제 부담이 보입니다. 서류는 미리 떼 가는 게 좋아요.", tags:"전세 대출 금리 후기 계약"},
+    {id:3, date:"2026-11-18", src:"뉴스", who:"기사", title:"이번 주말 서울 아침 영하 3도… 첫 한파주의보", body:"찬 공기가 내려오면서 서울 아침 기온이 영하로 떨어진다. 수도관 동파와 난방 안전에 주의가 필요하다고 기상청이 밝혔다.", tags:"한파 날씨 겨울 기온"},
+    {id:4, date:"2026-01-08", src:"뉴스", who:"기사", title:"겨울철 전기요금, 난방 방식 따라 두 배 차이", body:"전기 히터와 대류형 컨벡터의 소비전력 차이를 비교했다. 같은 실내 온도를 유지해도 월 요금이 크게 벌어졌다.", tags:"전기요금 겨울 난방 히터"},
+    {id:5, date:"2026-11-14", src:"판", who:"사람", title:"김장 김치가 시어요, 원인이 뭘까요", body:"소금에 절이는 시간이 짧았던 것 같아요. 다음엔 하루 더 절여 보려고 합니다. 댓글들 감사합니다.", tags:"김장 김치 요리"},
+    {id:6, date:"2026-11-16", src:"쪽지", who:"사람", title:"서연 님과의 쪽지 — 헬스장 시간대", body:"혹시 문정동 헬스장 얘기하신 분이죠? 저도 같은 곳 다니는데 아침 7시가 한산해요.", tags:"헬스장 아침 운동"},
+    {id:7, date:"2026-11-10", src:"판", who:"사람", title:"동네 헬스장 3개월 다닌 후기", body:"기구 이름도 몰라서 한참 서성였는데 지금은 아침 7시에 갑니다. 3개월권이 한 달씩 끊는 것보다 쌌어요.", tags:"헬스장 후기 운동 문정동"},
+    {id:8, date:"2026-11-19", src:"뉴스", who:"기사", title:"아이 독감 유행, 초등학교 결석 늘어", body:"독감 환자가 두 주 새 1.8배로 늘었다. 예방접종과 손 씻기가 여전히 가장 효과적인 방법이라고 전문가들은 말한다.", tags:"독감 아이 학교 건강"},
+    {id:9, date:"2026-09-03", src:"검색기록", who:"사람", title:"내 검색어 — 자동차 보험 비교", body:"자동차보험 다이렉트 비교 찜목록. 3년 무사고 할인 특약.", tags:"자동차 보험 비교 할인"},
+    {id:10, date:"2026-11-05", src:"뉴스", who:"기사", title:"3호선 지연 잇따라… 출근길 혼잡", body:"신호 장치 점검으로 3호선 열차가 10분가량 지연됐다. 대체 버스 투입은 없었다.", tags:"지하철 3호선 지연 출근"},
+    {id:11, date:"2026-06-21", src:"판", who:"사람", title:"주말 등산 코스 추천해 주세요 (초보)", body:"북한산은 너무 셌고, 관악산은 사람이 많았어요. 2시간 정도 코스면 좋겠습니다.", tags:"등산 초보 코스 주말"},
+    {id:12, date:"2026-11-21", src:"뉴스", who:"기사", title:"반도체 수출 3개월 연속 증가", body:"메모리 가격 상승이 이어지며 수출액이 늘었다. 설비 투자도 함께 회복되는 모습이다.", tags:"반도체 수출 메모리"},
+    {id:13, date:"2025-12-02", src:"판", who:"사람", title:"작년 겨울 전세대출 갈아탄 이야기", body:"작년 이맘때 3%대 후반이었는데 지금은 더 낮아졌더라고요. 중도상환수수료 확인하세요.", tags:"전세 대출 금리 작년 겨울"},
+    {id:14, date:"2026-11-17", src:"쪽지", who:"사람", title:"판돌이 님과의 쪽지 — 중고거래", body:"안녕하세요, 이웃으로 보고 인사드려요. 중고 거래 관련해서 여쭤볼 게 있어서요.", tags:"중고거래 이웃"},
+    {id:15, date:"2026-10-30", src:"뉴스", who:"기사", title:"세탁기 10년 쓰면 전기요금 얼마나 늘까", body:"노후 가전의 대기전력과 효율 저하를 측정했다. 같은 사용량에도 요금 차이가 18% 났다.", tags:"세탁기 전기요금 가전"},
+    {id:16, date:"2026-08-14", src:"검색기록", who:"사람", title:"내 검색어 — 수삼 세척 보관", body:"6년근 세척 수삼 냉동 보관 방법, 믹서 갈아 마시기.", tags:"수삼 보관 믹서 건강"},
+    {id:17, date:"2026-11-12", src:"판", who:"사람", title:"아파트 관리비 겨울에 얼마나 오르나요", body:"난방비가 대부분이라 관리비 고지서 보고 놀랐습니다. 다른 단지도 비슷한가요?", tags:"아파트 관리비 난방 겨울"},
+    {id:18, date:"2026-11-22", src:"뉴스", who:"기사", title:"전세 사기 예방, 계약 전 확인 서류 3가지", body:"등기부등본과 국세·지방세 완납증명, 보증보험 가입 가능 여부를 확인해야 한다. 최근 피해 사례를 정리했다.", tags:"전세 사기 계약 서류 보증"},
+    {id:19, date:"2026-11-19", src:"뉴스", who:"기사", title:"전세보증금 반환 지연, 임차인 권리 어떻게", body:"계약 만료 후 보증금을 돌려받지 못한 사례가 늘고 있다. 내용증명과 임차권등기명령 절차를 정리했다.", tags:"전세 보증금 반환 임차인"},
+    {id:20, date:"2026-10-12", src:"판", who:"사람", title:"겨울 등산 준비물 뭐 챙기세요?", body:"방한 장갑과 아이젠은 필수인 것 같아요. 물은 보온병에 넣어 가면 좋습니다.", tags:"등산 겨울 준비물"},
+    {id:21, date:"2026-03-05", src:"뉴스", who:"기사", title:"금리 인하 신호에 대출 수요 다시 늘어", body:"시장금리가 내리면서 주택담보대출 문의가 늘었다. 은행들은 우대금리 조건을 조정하고 있다.", tags:"금리 대출 수요 주택담보"},
+    {id:22, date:"2026-11-21", src:"뉴스", who:"기사", title:"서울시 버스 노선 개편, 12월부터 적용", body:"간선·지선 노선 18개가 조정된다. 출퇴근 시간대 배차 간격도 함께 바뀐다.", tags:"버스 노선 서울 개편"},
+    {id:23, date:"2026-07-08", src:"판", who:"사람", title:"아이 독감 걸렸을 때 학교 며칠 쉬나요", body:"해열제 먹이고 48시간 지나면 보내도 된다고 들었는데, 학교마다 기준이 다르더라고요.", tags:"독감 학교 아이 등교"},
+    {id:24, date:"2026-11-02", src:"검색기록", who:"사람", title:"내 검색어 — 겨울 난방비 절약", body:"난방비 절약 방법, 보일러 온도 적정선, 창문 단열 필름.", tags:"난방비 겨울 절약 보일러"},
+    {id:25, date:"2026-11-06", src:"뉴스", who:"기사", title:"전기히터 화재 주의보, 소비전력 먼저 확인", body:"겨울철 전기히터 사용이 늘면서 화재 신고가 증가했다. 문어발식 콘센트 사용을 피해야 한다.", tags:"전기히터 화재 소비전력 겨울"},
+    {id:26, date:"2026-11-15", src:"쪽지", who:"사람", title:"도윤 님과의 쪽지 — 주말 등산", body:"이번 주말에 관악산 가실래요? 2시간 코스로 잡으면 초보도 괜찮아요.", tags:"등산 주말 코스 관악산"},
+    {id:27, date:"2025-11-30", src:"뉴스", who:"기사", title:"작년 겨울 한파, 12월 초에 절정", body:"12월 첫 주에 영하 10도까지 떨어졌던 기록이 있다. 올해도 비슷한 흐름이 예상된다.", tags:"한파 겨울 기록 영하"},
+    {id:28, date:"2026-09-19", src:"판", who:"사람", title:"중고 세탁기 팔아요 (10년 사용)", body:"작동은 잘 되는데 소음이 좀 있습니다. 직접 가져가실 분만 연락 주세요.", tags:"중고 세탁기 판매"},
+    {id:29, date:"2026-11-13", src:"뉴스", who:"기사", title:"반도체 설비 투자 회복 조짐", body:"장비 발주가 늘면서 내년 설비 투자 전망이 상향됐다. 소재·부품 업종도 함께 움직인다.", tags:"반도체 설비 투자"},
+    {id:30, date:"2026-08-20", src:"검색기록", who:"사람", title:"내 검색어 — 자동차보험 갱신", body:"자동차보험 갱신 할인, 마일리지 특약 조건.", tags:"자동차보험 갱신 할인"}
+  ];
+
+  var NOW = new Date("2026-11-23T06:40:00+09:00");
+  var EXAMPLES = [
+    "겨울에 본 기사인데 전세 대출 금리가 3%대였어",
+    "아이 학교 독감 결석 얘기 봤는데",
+    "작년에 혹시 전세 갈아탄 사람 후기",
+    "전기요금 두 배 차이 난다는 글"
+  ];
+
+  function norm(s){ return (s||"").toLowerCase().replace(/[^\w가-힣%]+/g," ").replace(/\s+/g," ").trim(); }
+  function bigrams(s){
+    var out = [];
+    for(var i=0;i<s.length-1;i++) out.push(s.slice(i,i+2));
+    return out;
+  }
+  function daysAgo(dateStr){
+    var d = new Date(dateStr+"T12:00:00+09:00");
+    return Math.max(0, (NOW - d)/86400000);
+  }
+
+  function stripParticle(t){
+    var suffs = ["였어","이었어","인데","이고","라고","라는","이에요","예요","에서","에게","한테","으로","로서","부터","까지","보다","처럼","이나","하고","은","는","이","가","을","를","의","에","도","와","과","만","랑","나","로"];
+    for(var k=0;k<2;k++){
+      var done = true;
+      for(var i=0;i<suffs.length;i++){
+        var sf = suffs[i];
+        if(t.length - sf.length >= 2 && t.slice(-sf.length) === sf){ t = t.slice(0, -sf.length); done = false; break; }
+      }
+      if(done) break;
+    }
+    return t;
+  }
+
+  function extractFragments(q){
+    var raw = norm(q).split(" ").filter(Boolean);
+    var frags = [], seen = {};
+    var stop = {"그거":1,"있잖아":1,"혹시":1,"같은데":1,"봤는데":1,"인데":1,"얘기":1,"본":1,"때":1,"거":1,"좀":1,"것":1};
+    raw.forEach(function(t0){
+      var t = stripParticle(t0);
+      if(!t) return;
+      // 숫자+단위는 따로
+      var m = t.match(/(\d+(\.\d+)?)%?/);
+      var candidates = [t];
+      if(m) candidates.push(m[1]+"%");
+      candidates.forEach(function(c){
+        c = c.replace(/[^\w가-힣%]/g,"");
+        if(c.length<1 || stop[c] || seen[c]) return;
+        seen[c]=1; frags.push(c);
+      });
+      // 2글자 이상 토큰은 앞부분 명사 후보도
+    });
+    // 더 긴 조각에 포함되는 짧은 조각은 버린다
+    frags = frags.filter(function(f){
+      return !frags.some(function(g){ return g !== f && g.length > f.length && g.indexOf(f) >= 0; });
+    });
+    return frags.slice(0,10);
+  }
+
+  var FIELD = {title:3.0, tags:2.0, body:1.0};
+  var FIELD_LABEL = {title:"제목", tags:"태그", body:"본문"};
+
+  var SYN = [["갈아타","갈아탄","대환","전환"],["한산","한적","조용"],["적정","적당","알맞"],["영하","마이너스"],["등산","산행"],["독감","인플루엔자"]];
+  function synonyms(f){
+    var out = [];
+    SYN.forEach(function(g){
+      if(g.some(function(x){ return f.indexOf(x)>=0 || x.indexOf(f)>=0; })){ out = out.concat(g); }
+    });
+    return out;
+  }
+
+  function fragScore(doc, frag){
+    var f = norm(frag);
+    if(!f) return {score:0, hit:null, how:""};
+    var t = norm(doc.title), g = norm(doc.tags).replace(/ /g,""), b = norm(doc.body);
+    var best = {score:0, hit:null, how:""};
+    var forms = [f].concat(synonyms(f).filter(function(x){ return x !== f; }));
+    [["title",t,FIELD.title],["tags",g,FIELD.tags],["body",b,FIELD.body]].forEach(function(x){
+      forms.forEach(function(form){
+        if(best.score >= x[2]) return;
+        if(x[1].indexOf(form) >= 0 && form !== f){
+          best = {score: x[2]*0.8, hit: x[0], how: "동의어 ‘"+form+"’"};
+        }
+      });
+      var field = x[0], text = x[1], w = x[2];
+      if(text.indexOf(f)>=0){
+        if(w > best.score){ best = {score:w, hit:field, how:"정확히 일치"}; }
+        return;
+      }
+      // 부분 일치: 2글자 조각이 과반 들어 있으면
+      var bg = bigrams(f);
+      if(bg.length){
+        var has = bg.filter(function(x){return text.indexOf(x)>=0;}).length;
+        var ratio = has/bg.length;
+        if(ratio>=0.6){
+          var s = w*0.4*ratio;
+          if(s > best.score){ best = {score:s, hit:field, how:"부분 일치 " + Math.round(ratio*100) + "%"}; }
+        }
+      }
+    });
+    return best;
+  }
+
+  var state = {frags:[], off:{}, last:null};
+
+  function match(doc, frags){
+    var total = 0, maxTotal = 0, details = [];
+    frags.forEach(function(f){
+      if(state.off[f]) return;
+      maxTotal += Math.max(FIELD.title, FIELD.tags, FIELD.body);
+      var r = fragScore(doc, f);
+      total += r.score;
+      if(r.score>0) details.push({frag:f, how:r.how, field:r.hit});
+    });
+    return {raw: total, norm: maxTotal ? total/maxTotal : 0, details: details};
+  }
+
+  function passes(doc){
+    var when = $("f-when").value, where = $("f-where").value, who = $("f-who").value;
+    if(where !== "any" && doc.src !== where) return false;
+    if(who === "기사" && doc.who !== "기사") return false;
+    if(who === "사람" && doc.who !== "사람") return false;
+    if(when !== "any" && daysAgo(doc.date) > Number(when)) return false;
+    return true;
+  }
+
+  function highlight(text, frags){
+    var out = text, marks = [];
+    frags.forEach(function(f){
+      if(state.off[f]) return;
+      if(f.length<2) return;
+      var i = out.toLowerCase().indexOf(f.toLowerCase());
+      if(i>=0) marks.push([i, i+f.length]);
+    });
+    if(!marks.length) return out.replace(/</g,"&lt;");
+    marks.sort(function(a,b){return a[0]-b[0];});
+    var merged = [marks[0]];
+    marks.slice(1).forEach(function(m){
+      var last = merged[merged.length-1];
+      if(m[0] <= last[1]) last[1] = Math.max(last[1], m[1]); else merged.push(m);
+    });
+    var s = "", pos = 0;
+    merged.forEach(function(m){
+      s += escapeHtml(out.slice(pos, m[0])) + "<mark>" + escapeHtml(out.slice(m[0], m[1])) + "</mark>";
+      pos = m[1];
+    });
+    s += escapeHtml(out.slice(pos));
+    return s;
+  }
+  function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function renderChips(){
+    var area = $("chipArea"), box = $("chips");
+    if(!state.frags.length){ area.hidden = true; return; }
+    area.hidden = false;
+    box.innerHTML = state.frags.map(function(f){
+      return '<button class="chip '+(state.off[f]?"off":"")+'" data-frag="'+escapeHtml(f)+'" aria-pressed="'+(!state.off[f])+'">'+escapeHtml(f)+'</button>';
+    }).join("");
+    Array.prototype.forEach.call(box.querySelectorAll("[data-frag]"), function(b){
+      b.addEventListener("click", function(){
+        var f = b.getAttribute("data-frag");
+        state.off[f] = !state.off[f];
+        logLine("조각 " + (state.off[f] ? "끄기" : "켜기") + " — " + f);
+        renderChips(); run(false);
+      });
+    });
+  }
+
+  function run(isNew){
+    var q = $("q").value.trim();
+    if(isNew){
+      state.frags = extractFragments(q);
+      state.off = {};
+      renderChips();
+    }
+    var frags = state.frags.length ? state.frags : extractFragments(q);
+    var hits = [];
+    DOCS.forEach(function(doc){
+      if(!passes(doc)) return;
+      var m = match(doc, frags);
+      if(m.norm <= 0 && frags.length) return;
+      var decay = 1 + 0.15 * Math.max(0, 1 - daysAgo(doc.date)/365);
+      hits.push({doc:doc, m:m, score: m.norm * decay});
+    });
+    hits.sort(function(a,b){ return b.score - a.score; });
+
+    var box = $("results");
+    if(!q){ box.innerHTML = '<div class="empty">찾고 싶은 걸 기억나는 대로 적어 보세요. 문장이어도 됩니다.</div>'; return; }
+
+    if(!hits.length){
+      box.innerHTML = '<div class="empty"><b>맞는 결과가 없어요.</b><br>기억 조각을 조금 바꿔 볼까요? 예: “전세 대출”, “겨울 난방”. '+
+        '<br><span class="tiny">조각 추출: '+ (frags.length? escapeHtml(frags.join(" · ")) : "없음") +'</span></div>';
+      logLine("결과 0건 — " + q);
+      return;
+    }
+
+    var top = hits.slice(0,6);
+    box.innerHTML = top.map(function(h, i){
+      var d = h.doc;
+      var topScore = hits[0].score || 1;
+      var rel = Math.round(h.score / topScore * 100);
+      var why = h.m.details.slice(0,4).map(function(x){ return x.frag + " (" + (FIELD_LABEL[x.field]||"") + " " + x.how + ")"; }).join(" · ");
+      return '<div class="item">'+
+        '<div class="top"><span class="pill '+(d.src==="뉴스"?"p":d.src==="판"?"g":"n")+'">'+d.src+'</span>'+
+        '<span>'+d.date+'</span><span>·</span><span>'+(d.who==="기사"?"기사·보도":"사람이 쓴 글")+'</span>'+
+        '<span style="margin-left:auto" title="이 검색 안에서 1위 결과 대비 상대 점수">상대 적합도 '+rel+'%</span></div>'+
+        '<h3>'+highlight(d.title, frags)+'</h3>'+
+        '<div class="snip">'+highlight(d.body, frags)+'</div>'+
+        '<div class="scorebar"><i style="width:'+Math.max(4,rel)+'%"></i></div>'+
+        '<div class="whybox"><b>왜 이 결과인지</b> — '+escapeHtml(why || "시간 근접도만 반영")+
+        (i===0?' · <b>최상위</b>':'')+'</div>'+
+        '</div>';
+    }).join("");
+    if(top[0]) {
+      $("results").setAttribute("aria-label", "검색 결과 " + top.length + "건");
+    }
+    logLine("검색 — " + q + " · 조각 " + frags.length + "개 · 결과 " + top.length + "건 (상위 1: " + top[0].doc.title + ")");
+  }
+
+  var logs = [];
+  function logLine(s){
+    logs.unshift(new Date().toTimeString().slice(0,8) + "  " + s);
+    $("log").textContent = logs.slice(0,12).join("\n");
+  }
+
+
+  // ---------- v2: 품질 측정 (라벨된 질의 10건) ----------
+  var GOLD = [
+    {q:"겨울에 본 기사인데 전세 대출 금리가 3%대였어", id:1},
+    {q:"아이 학교 독감 결석 얘기 봤는데", id:8},
+    {q:"작년에 전세 갈아탄 사람 후기", id:13},
+    {q:"전기요금 두 배 차이 난다는 글", id:4},
+    {q:"주말에 등산 코스 추천해 주는 글", id:11},
+    {q:"서울 버스 노선 바뀐다던 기사", id:22},
+    {q:"세탁기 오래 쓰면 전기요금 얼마나 늘어", id:15},
+    {q:"헬스장 아침에 한산하다던 쪽지", id:6},
+    {q:"한파 영하 3도 기사", id:3},
+    {q:"반도체 수출 늘었다는 뉴스", id:12}
+  ];
+
+  function keywordEngine(q){
+    var toks = norm(q).split(" ").filter(function(t){ return t.length>=2; });
+    var scored = DOCS.map(function(doc){
+      var t = norm(doc.title), g = norm(doc.tags), b = norm(doc.body), sc = 0, hits = 0;
+      toks.forEach(function(tok){
+        if(t.indexOf(tok)>=0){ sc += FIELD.title; hits++; }
+        else if(g.indexOf(tok.replace(/ /g,""))>=0){ sc += FIELD.tags; hits++; }
+        else if(b.indexOf(tok)>=0){ sc += FIELD.body; hits++; }
+      });
+      return {doc:doc, sc:hits ? sc : 0};
+    }).filter(function(x){ return x.sc>0; });
+    scored.sort(function(a,b){ return b.sc-a.sc; });
+    return scored.map(function(x){ return x.doc.id; });
+  }
+
+  function strictEngine(q){
+    var toks = norm(q).split(" ").filter(function(t){ return t.length>=2; });
+    var scored = DOCS.map(function(doc){
+      var t = norm(doc.title), g = norm(doc.tags), b = norm(doc.body), all = t+" "+g+" "+b, sc = 0;
+      var every = toks.every(function(tok){ return all.indexOf(tok)>=0; });
+      if(!every) return {doc:doc, sc:0};
+      toks.forEach(function(tok){
+        if(t.indexOf(tok)>=0) sc += FIELD.title;
+        else if(g.indexOf(tok)>=0) sc += FIELD.tags;
+        else sc += FIELD.body;
+      });
+      return {doc:doc, sc:sc};
+    }).filter(function(x){ return x.sc>0; });
+    scored.sort(function(a,b){ return b.sc-a.sc; });
+    return scored.map(function(x){ return x.doc.id; });
+  }
+
+  function fragmentEngine(q){
+    var frags = extractFragments(q);
+    var scored = DOCS.map(function(doc){
+      var m = match(doc, frags);
+      return {doc:doc, sc: m.norm};
+    }).filter(function(x){ return x.sc>0; });
+    scored.sort(function(a,b){ return b.sc-a.sc; });
+    return scored.map(function(x){ return x.doc.id; });
+  }
+
+  if($("benchSummary")){
+    var rows = GOLD.map(function(g){
+      var k = keywordEngine(g.q), st = strictEngine(g.q), f = fragmentEngine(g.q);
+      return {
+        q:g.q,
+        gold:g.id,
+        k1:k[0], k3:k.slice(0,3).indexOf(g.id)>=0,
+        s1:st[0], s3:st.slice(0,3).indexOf(g.id)>=0,
+        f1:f[0], f3:f.slice(0,3).indexOf(g.id)>=0,
+        khit: k[0]===g.id, shit: st[0]===g.id, fhit: f[0]===g.id
+      };
+    });
+    var k1 = rows.filter(function(r){return r.khit;}).length;
+    var k3 = rows.filter(function(r){return r.k3;}).length;
+    var s1 = rows.filter(function(r){return r.shit;}).length;
+    var s3 = rows.filter(function(r){return r.s3;}).length;
+    var f1 = rows.filter(function(r){return r.fhit;}).length;
+    var f3 = rows.filter(function(r){return r.f3;}).length;
+    var n = rows.length;
+    $("benchSummary").innerHTML =
+      '<div class="kpi">'+
+      '<div><b>조각 검색 hit@1 / hit@3</b><span>'+f1+'/'+n+' · '+f3+'/'+n+'</span></div>'+
+      '<div><b>키워드(느슨·하나라도) hit@1 / hit@3</b><span>'+k1+'/'+n+' · '+k3+'/'+n+'</span></div>'+
+      '<div><b>키워드(엄격·모두 일치) hit@1 / hit@3</b><span>'+s1+'/'+n+' · '+s3+'/'+n+'</span></div>'+
+      '</div>';
+    function title(id){ var d=DOCS.filter(function(x){return x.id===id;})[0]; return d ? d.title : "—"; }
+    function cell(ok, id){
+      var txt = ok ? "적중" : (id === undefined ? "결과 0건" : "실패 — " + escapeHtml(title(id)));
+      return '<td style="color:'+(ok?"#0b6b3a":"#b3261e")+'">'+txt+'</td>';
+    }
+    $("benchTable").innerHTML = '<table><thead><tr><th>질의</th><th>정답 문서</th><th>키워드(느슨) 1위</th><th>키워드(엄격) 1위</th><th>조각 검색 1위</th></tr></thead><tbody>'+
+      rows.map(function(r){
+        return '<tr><td>'+escapeHtml(r.q)+'</td><td>'+escapeHtml(title(r.gold))+'</td>'+
+          cell(r.khit, r.k1)+cell(r.shit, r.s1)+cell(r.fhit, r.f1)+'</tr>';
+      }).join('')+'</tbody></table>';
+  }
+
+  // init
+  $("corpusCount").textContent = String(DOCS.length);
+  $("examples").innerHTML = EXAMPLES.map(function(e){
+    return '<button class="ex" data-q="'+escapeHtml(e)+'">'+escapeHtml(e)+'</button>';
+  }).join("");
+  Array.prototype.forEach.call(document.querySelectorAll(".ex"), function(b){
+    b.addEventListener("click", function(){
+      $("q").value = b.getAttribute("data-q");
+      run(true);
+    });
+  });
+  $("go").addEventListener("click", function(){ run(true); });
+  $("q").addEventListener("keydown", function(e){ if(e.key==="Enter") run(true); });
+  ["f-when","f-where","f-who"].forEach(function(id){
+    $(id).addEventListener("change", function(){ logLine("필터 — "+id+"="+$(id).value); run(false); });
+  });
+
+
+  // ---------- v2: 규모 시험 (같은 질의, 자료만 늘림) ----------
+  function mulberry(seed){
+    return function(){
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var TOPIC = [
+    {k:"전세", t:["전세대출 금리","전세보증금 반환","전세 사기 예방","전세 계약 갱신"], b:"은행과 보증기관 조건이 달라 실제 부담이 달라진다. 서류와 등기부등본 확인이 먼저다.", tags:"전세 대출 보증금 계약"},
+    {k:"난방", t:["겨울 난방비","보일러 온도","전기히터 소비전력","단열 필름"], b:"같은 실내 온도라도 난방 방식과 사용 시간에 따라 요금 차이가 크다.", tags:"난방 전기요금 겨울 보일러"},
+    {k:"등산", t:["주말 등산 코스","겨울 등산 준비물","관악산 초보 코스","북한산 사람 많은 길"], b:"초보는 2시간 안팎 코스가 낫고 방한 장갑과 아이젠을 챙긴다.", tags:"등산 코스 주말 초보"},
+    {k:"반도체", t:["반도체 수출","메모리 가격","설비 투자 전망","소재 부품 업종"], b:"메모리 가격과 장비 발주가 함께 움직이며 수출액이 늘었다.", tags:"반도체 수출 메모리 투자"},
+    {k:"독감", t:["아이 독감 유행","독감 예방접종","학교 결석 기준","독감 등교"], b:"환자가 두 주 새 늘었고 예방접종과 손 씻기가 여전히 가장 효과적이다.", tags:"독감 아이 학교 건강"},
+    {k:"버스", t:["서울 버스 노선 개편","간선 지선 조정","출퇴근 배차","버스 정류장 변경"], b:"노선 18개가 조정되고 출퇴근 시간대 배차 간격도 바뀐다.", tags:"버스 노선 서울 개편"},
+    {k:"헬스장", t:["동네 헬스장 후기","헬스장 아침 시간","3개월권 가격","기구 사용법"], b:"아침 7시가 한산하고 3개월권이 한 달씩 끊는 것보다 쌌다.", tags:"헬스장 후기 운동 아침"},
+    {k:"세탁기", t:["노후 세탁기 전기요금","세탁기 소음","중고 세탁기 거래","대기전력"], b:"같은 사용량에도 효율 저하로 요금 차이가 났고 소음도 커졌다.", tags:"세탁기 전기요금 가전"},
+    {k:"자동차보험", t:["자동차보험 갱신","다이렉트 비교","마일리지 특약","무사고 할인"], b:"갱신 시점과 특약 조건에 따라 보험료 차이가 크다.", tags:"자동차보험 갱신 할인 비교"}
+  ];
+  var PLACE = ["서울","부산","대구","인천","대전","광주","수원","성남","고양","청주"];
+  var MONTH = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
+  function genDocs(n){
+    var rnd = mulberry(20261123);
+    var out = [];
+    for(var i=0;i<n;i++){
+      var tp = TOPIC[Math.floor(rnd()*TOPIC.length)];
+      var tt = tp.t[Math.floor(rnd()*tp.t.length)];
+      var pl = PLACE[Math.floor(rnd()*PLACE.length)];
+      var mo = MONTH[Math.floor(rnd()*MONTH.length)];
+      var num = 1 + Math.floor(rnd()*9);
+      var src = rnd() < 0.5 ? "뉴스" : "판";
+      out.push({
+        id: 1000+i,
+        date: "2026-" + String(1+Math.floor(rnd()*11)).padStart(2,"0") + "-" + String(1+Math.floor(rnd()*27)).padStart(2,"0"),
+        src: src,
+        who: src === "뉴스" ? "기사" : "사람",
+        title: pl + " " + tt + " 정리 " + num,
+        body: mo + " 기준으로 " + tp.b + " " + pl + " 기준 사례 " + num + "건을 더 봤다.",
+        tags: tp.tags + " " + pl
+      });
+    }
+    return out;
+  }
+
+  function runScale(){
+    var before = DOCS.length;
+    var added = genDocs(270);
+    Array.prototype.push.apply(DOCS, added);
+    var t0 = performance.now();
+    var rows = GOLD.map(function(g){
+      var k = keywordEngine(g.q), f = fragmentEngine(g.q);
+      return { gold:g.id,
+        khit: k[0]===g.id, k3: k.slice(0,3).indexOf(g.id)>=0,
+        fhit: f[0]===g.id, f3: f.slice(0,3).indexOf(g.id)>=0,
+        k0: k.length===0, f0: f.length===0 };
+    });
+    var elapsed = performance.now() - t0;
+    var n = rows.length;
+    var k1 = rows.filter(function(r){return r.khit;}).length;
+    var k3 = rows.filter(function(r){return r.k3;}).length;
+    var f1 = rows.filter(function(r){return r.fhit;}).length;
+    var f3 = rows.filter(function(r){return r.f3;}).length;
+    var f0 = rows.filter(function(r){return r.f0;}).length;
+    var k0 = rows.filter(function(r){return r.k0;}).length;
+    $("corpusCount").textContent = String(DOCS.length);
+    $("scaleOut").innerHTML =
+      '<div class="kpi">' +
+      '<div><b>자료 ' + DOCS.length + '건에서 조각 검색</b><span>hit@1 ' + f1 + '/' + n + ' · hit@3 ' + f3 + '/' + n + ' · 0건 ' + f0 + '</span></div>' +
+      '<div><b>같은 자료에서 키워드(느슨)</b><span>hit@1 ' + k1 + '/' + n + ' · hit@3 ' + k3 + '/' + n + ' · 0건 ' + k0 + '</span></div>' +
+      '<div><b>질의 10건 두 방식 합계 시간</b><span>' + Math.round(elapsed) + 'ms (' + Math.round(elapsed/ (n*2)) + 'ms/질의)</span></div>' +
+      '<div><b>늘어난 자료</b><span>' + (DOCS.length - before) + '건, 제가 만든 것</span></div>' +
+      '</div>' +
+      '<p class="tiny muted" style="margin-top:8px">정답 문서는 늘어난 자료에도 그대로 있고, 늘어난 자료는 같은 주제의 다른 문서입니다. 실제 서비스 색인이 아니라 정답을 흔들어 보는 시험입니다.</p>';
+  }
+  if($("scaleRun")){
+    $("scaleRun").addEventListener("click", runScale);
+  }
+
+  var tabs = [["t1","p1"],["t2","p2"],["t3","p3"],["t4","p4"],["t5","p5"],["t6","p6"],["t7","p7"]];
+  function selectTab(id){
+    tabs.forEach(function(p){
+      var on = p[0]===id;
+      $(p[0]).setAttribute("aria-selected", String(on));
+      $(p[1]).hidden = !on;
+    });
+  }
+  tabs.forEach(function(p,i){
+    var btn = $(p[0]);
+    btn.addEventListener("click", function(){ selectTab(p[0]); window.scrollTo({top:0,behavior:"smooth"}); });
+    btn.addEventListener("keydown", function(e){
+      var n=null;
+      if(e.key==="ArrowRight") n = tabs[(i+1)%tabs.length];
+      if(e.key==="ArrowLeft") n = tabs[(i+tabs.length-1)%tabs.length];
+      if(n){ e.preventDefault(); selectTab(n[0]); $(n[0]).focus(); }
+    });
+  });
+
+  // prefill so a visitor sees results immediately
+  $("q").value = EXAMPLES[0];
+  run(true);
+})();
+
+</script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var run = $("fv-run");
+  if(!run) return;
+
+  var W = {title:3, tag:2, body:1};
+  function sync(){
+    W.title = Number($("fv-w1").value);
+    W.tag = Number($("fv-w2").value);
+    W.body = Number($("fv-w3").value);
+    $("fv-wt").textContent = W.title.toFixed(1);
+    $("fv-wg").textContent = W.tag.toFixed(1);
+    $("fv-wb").textContent = W.body.toFixed(1);
+  }
+  ["fv-w1","fv-w2","fv-w3"].forEach(function(id){
+    $(id).addEventListener("input", function(){ sync(); score(); });
+  });
+
+  function tokens(s){
+    return String(s || "")
+      .replace(/[^\uAC00-\uD7A3a-zA-Z0-9%.\s]/g, " ")
+      .split(/\s+/)
+      .filter(function(t){ return t.length >= 2; });
+  }
+
+  function fieldScore(token, text, weight){
+    var t = String(text || "");
+    if(!t) return 0;
+    if(t.indexOf(token) >= 0) return 1 * weight;
+    var part = token.slice(0, Math.max(2, Math.ceil(token.length / 2)));
+    if(t.indexOf(part) >= 0) return 0.4 * weight;
+    return 0;
+  }
+
+  function score(){
+    var q = $("fv-q").value;
+    var out = $("fv-out");
+    if(!q.trim()){
+      out.innerHTML = "<span class='muted'>기억나는 문장을 넣고 점수 보기를 누르세요.</span>";
+      return;
+    }
+    var toks = tokens(q);
+    if(!toks.length){
+      out.innerHTML = "<span class='muted'>두 글자 이상 조각이 없어요. 단어를 하나 더 넣어 보세요.</span>";
+      return;
+    }
+    var rows = toks.map(function(tk){
+      var s1 = fieldScore(tk, $("fv-title").value, W.title);
+      var s2 = fieldScore(tk, $("fv-tags").value, W.tag);
+      var s3 = fieldScore(tk, $("fv-body").value, W.body);
+      var best = Math.max(s1, s2, s3);
+      var where = best === 0 ? "맞는 곳 없음" : (best === s1 ? "제목" : (best === s2 ? "태그" : "본문"));
+      return {tk:tk, best:best, where:where};
+    });
+    var total = rows.reduce(function(a, r){ return a + r.best; }, 0);
+    var html = "<div style='font-weight:800'>합계 " + total.toFixed(1) + "점, 조각 " + rows.length + "개</div>";
+    html += "<table style='margin-top:8px'><thead><tr><th>조각</th><th>맞은 곳</th><th>점수</th></tr></thead><tbody>";
+    rows.forEach(function(r){
+      html += "<tr><td>" + r.tk + "</td><td>" + r.where + "</td><td>" + r.best.toFixed(1) + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    html += "<div class='muted' style='margin-top:8px'>정확히 맞으면 1, 앞부분만 맞으면 0.4를 그 칸의 가중치에 곱해요. 이 값은 이 상자에서만 계산한 것이고, 시간 감쇠와 문서 사이 순위는 넣지 않았어요.</div>";
+    out.innerHTML = html;
+  }
+
+  run.addEventListener("click", score);
+  ["fv-q","fv-title","fv-tags","fv-body"].forEach(function(id){
+    $(id).addEventListener("input", function(){ if($("fv-q").value.trim()) score(); });
+  });
+  sync();
+})();
+
+</script>
+</body>
+</html>
