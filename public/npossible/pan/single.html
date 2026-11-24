@@ -1004,6 +1004,7 @@
 
   function measure(){
     var b = $("v2-post");
+    if(!b.clientHeight){ return; }
     var lh = parseFloat(getComputedStyle(b).lineHeight) || 18;
     var lines = Math.round(b.clientHeight / lh);
     var cut = b.scrollWidth > b.clientWidth + 1;
@@ -1076,6 +1077,10 @@
       : done + "문항에 답했어요. 남은 문항이 있어요.";
   }
 
+  var tabBtn = document.getElementById("t7");
+  if(tabBtn){
+    tabBtn.addEventListener("click", function(){ setTimeout(draw, 30); });
+  }
   draw();
   report();
 })();
