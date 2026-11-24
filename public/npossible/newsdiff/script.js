@@ -219,7 +219,7 @@
 
   /* ---------- 렌더 ---------- */
   function badge(kind) {
-    return kind === "add" ? "새로 밝혀짐" : kind === "chg" ? "바뀜" : kind === "rem" ? "빠짐" : kind === "fix" ? "정정 표시" : "그대로";
+    return kind === "add" ? "이전 기사에 없던 문장" : kind === "chg" ? "바뀜" : kind === "rem" ? "빠짐" : kind === "fix" ? "정정 표시" : "그대로";
   }
 
   function render() {
@@ -287,7 +287,7 @@
     $("btnAll").className = S.showSame ? "btn on" : "btn";
 
     announce("새로 밝혀진 문장 " + d.added + "개, 바뀐 문장 " + d.changed + "개, 빠진 문장 " + d.removed +
-      "개, 정정 표시 " + d.fixed + "개, 숫자 변화 " + d.numCount + "곳입니다. 화면에 " + shown + "줄을 보여 주고, 경계 사례 " + d.edge.length + "건을 따로 적었습니다.");
+      "개, 정정 표시 " + d.fixed + "개, 숫자 변화 " + d.numCount + "곳입니다. 화면에 " + shown + "줄을 보여 주고, 같은 문장인지 애매한 짝 " + d.edge.length + "건을 따로 적었습니다.");
 
     renderReadMark();
   }
